@@ -1,0 +1,41 @@
+# ── Secrets & environment ───────────────────────────────────────────────────
+.env
+*.env
+!.env.example
+
+# ── Node / Frontend ─────────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+*.local
+
+# ── Python / Backend ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# ── Docker ──────────────────────────────────────────────────────────────────
+# (nothing to ignore here; docker-compose.yml is committed)
+
+# ── OS & editor ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
