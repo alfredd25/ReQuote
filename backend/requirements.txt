@@ -1,4 +1,16 @@
+# ── Web framework ────────────────────────────────────────────────────────────
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 pydantic-settings==2.6.1
+
+# ── Database (async runtime + sync Alembic driver) ───────────────────────────
+sqlalchemy==2.0.36
 asyncpg==0.30.0
+psycopg2-binary==2.9.10
+
+# ── Migrations ───────────────────────────────────────────────────────────────
+alembic==1.14.0
+
+# ── Testing ──────────────────────────────────────────────────────────────────
+pytest==8.3.3
+pytest-asyncio==0.24.0
