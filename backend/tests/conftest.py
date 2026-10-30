@@ -12,9 +12,17 @@ conftest or mark.
 
 import pytest
 from decimal import Decimal
+import httpx
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
+from app.database import get_db
+from app.main import app
 from app.models.base import Base
 from app.models.quotation import Quotation, QuotationItem, QuotationStatus
 
@@ -105,3 +113,46 @@ def make_item(
     session.add(item)
     session.flush()
     return item
+
+
+# ── Async fixtures for FastAPI & HTTPX API testing ────────────────────────────
+
+@pytest.fixture
+async def async_engine():
+    """Function-scoped async SQLite in-memory engine."""
+    _engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+    )
+    async with _engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield _engine
+    await _engine.dispose()
+
+
+@pytest.fixture
+async def async_db(async_engine):
+    """Function-scoped async database session."""
+    session_factory = async_sessionmaker(
+        async_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+    async with session_factory() as session:
+        yield session
+
+
+@pytest.fixture
+async def client(async_db):
+    """
+    HTTPX AsyncClient configured to dispatch requests directly to FastAPI
+    with the database dependency overridden to use the in-memory test session.
+    """
+    async def override_get_db():
+        yield async_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+    app.dependency_overrides.clear()
