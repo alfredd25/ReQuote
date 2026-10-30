@@ -244,3 +244,103 @@ class QuotationListResponse(BaseModel):
     page: int = Field(ge=1, description="Current page number (1-based)")
     page_size: int = Field(ge=1, description="Number of items per page")
     total_pages: int = Field(ge=0, description="Total number of pages")
+
+
+class QuotationUpdate(BaseModel):
+    """
+    Schema for updating an existing quotation.
+
+    All fields are optional. Providing `items` replaces the entire line items
+    list and triggers total recalculation via Decimal arithmetic.
+    """
+
+    title: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+        description="Updated quotation title",
+    )
+    description: str | None = None
+    customer_name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=255,
+        description="Updated customer contact name",
+    )
+    customer_email: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Updated customer email address",
+    )
+    customer_phone: str | None = Field(
+        default=None,
+        max_length=50,
+        description="Updated customer phone number",
+    )
+    customer_company: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Updated customer company",
+    )
+    customer_address: str | None = None
+    currency: str | None = Field(
+        default=None,
+        min_length=3,
+        max_length=3,
+        description="Updated ISO 4217 three-letter currency code",
+    )
+    tax_rate: Decimal | None = Field(
+        default=None,
+        ge=0,
+        le=1,
+        description="Updated tax rate (e.g. 0.1000 = 10%)",
+    )
+    notes: str | None = None
+    terms_and_conditions: str | None = None
+    items: list[QuotationItemCreate] | None = Field(
+        default=None,
+        description="Replacement line items for this quotation",
+    )
+
+    @field_validator("title", "customer_name")
+    @classmethod
+    def validate_non_blank_strings(cls, v: str | None) -> str | None:
+        if v is not None:
+            trimmed = v.strip()
+            if not trimmed:
+                raise ValueError("Field cannot be blank")
+            return trimmed
+        return v
+
+    @field_validator("customer_email", mode="before")
+    @classmethod
+    def validate_and_normalize_email(cls, v: Any) -> Any:
+        if v is None:
+            return None
+        if isinstance(v, str):
+            trimmed = v.strip()
+            if not trimmed:
+                return None
+            if not EMAIL_REGEX.match(trimmed):
+                raise ValueError("Invalid email address format")
+            return trimmed
+        return v
+
+    @field_validator("currency", mode="before")
+    @classmethod
+    def normalize_currency(cls, v: Any) -> Any:
+        if v is not None and isinstance(v, str):
+            trimmed = v.strip().upper()
+            if len(trimmed) != 3 or not trimmed.isalpha():
+                raise ValueError("currency must be a 3-letter alphabetic code")
+            return trimmed
+        return v
+
+
+class QuotationStatusUpdate(BaseModel):
+    """Schema for updating the lifecycle status of a quotation."""
+
+    status: QuotationStatus = Field(
+        ...,
+        description="Target lifecycle status (e.g. sent, accepted, rejected, expired, cancelled)",
+    )

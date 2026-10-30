@@ -25,6 +25,10 @@ from decimal import Decimal
 import uuid
 import pytest
 import httpx
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.quotation import Quotation, QuotationItem
 
 
 # ── Creation Tests ────────────────────────────────────────────────────────────
@@ -471,4 +475,539 @@ class TestPrefixCompatibilityAPI:
         list_res = await client.get("/api/quotations")
         assert list_res.status_code == 200
         assert list_res.json()["total"] >= 1
+
+
+# ── Update Tests ──────────────────────────────────────────────────────────────
+
+class TestUpdateQuotationAPI:
+    """Test suite for PUT /quotations/{id} endpoint."""
+
+    @pytest.mark.asyncio
+    async def test_update_customer_and_scalar_fields_success(
+        self, client: httpx.AsyncClient
+    ):
+        # Create initial quote
+        create_res = await client.post(
+            "/quotations",
+            json={
+                "title": "Initial Quote",
+                "customer_name": "Old Client",
+                "customer_email": "old@example.com",
+            },
+        )
+        assert create_res.status_code == 201
+        qid = create_res.json()["id"]
+
+        # Update details
+        update_payload = {
+            "title": "Updated Quote Title",
+            "customer_name": "New Client Inc",
+            "customer_email": "new@example.com",
+            "customer_phone": "+1-800-555-1234",
+            "notes": "Updated notes on billing",
+        }
+        update_res = await client.put(f"/quotations/{qid}", json=update_payload)
+        assert update_res.status_code == 200
+
+        data = update_res.json()
+        assert data["id"] == qid
+        assert data["title"] == "Updated Quote Title"
+        assert data["customer_name"] == "New Client Inc"
+        assert data["customer_email"] == "new@example.com"
+        assert data["customer_phone"] == "+1-800-555-1234"
+        assert data["notes"] == "Updated notes on billing"
+
+    @pytest.mark.asyncio
+    async def test_update_line_items_recalculates_totals_with_decimal_arithmetic(
+        self, client: httpx.AsyncClient
+    ):
+        # Initial quote with 1 item: 2 * 50 = 100, 10% tax -> 110 total
+        create_res = await client.post(
+            "/quotations",
+            json={
+                "title": "Development",
+                "customer_name": "Acme",
+                "tax_rate": "0.1000",
+                "items": [
+                    {
+                        "description": "Initial Task",
+                        "quantity": "2.0000",
+                        "unit_price": "50.0000",
+                    }
+                ],
+            },
+        )
+        assert create_res.status_code == 201
+        qid = create_res.json()["id"]
+        assert Decimal(create_res.json()["total_amount"]) == Decimal("110.0000")
+
+        # Update: replace items with 2 new items
+        # Item 1: 3.5 * 100 = 350.0000
+        # Item 2: 1.0 * 150 = 150.0000
+        # Subtotal: 500.0000, 10% tax: 50.0000, Total: 550.0000
+        # Send bogus client totals to ensure backend recalculates them
+        update_payload = {
+            "subtotal": "9999.0000",
+            "tax_amount": "9999.0000",
+            "total_amount": "9999.0000",
+            "items": [
+                {
+                    "description": "Consulting",
+                    "quantity": "3.5000",
+                    "unit_price": "100.0000",
+                    "line_total": "0.0000",
+                },
+                {
+                    "description": "Implementation",
+                    "quantity": "1.0000",
+                    "unit_price": "150.0000",
+                    "line_total": "0.0000",
+                },
+            ],
+        }
+        update_res = await client.put(f"/quotations/{qid}", json=update_payload)
+        assert update_res.status_code == 200
+
+        data = update_res.json()
+        assert len(data["items"]) == 2
+        assert data["items"][0]["description"] == "Consulting"
+        assert Decimal(data["items"][0]["line_total"]) == Decimal("350.0000")
+        assert data["items"][1]["description"] == "Implementation"
+        assert Decimal(data["items"][1]["line_total"]) == Decimal("150.0000")
+
+        assert Decimal(data["subtotal"]) == Decimal("500.0000")
+        assert Decimal(data["tax_amount"]) == Decimal("50.0000")
+        assert Decimal(data["total_amount"]) == Decimal("550.0000")
+
+    @pytest.mark.asyncio
+    async def test_update_tax_rate_recalculates_totals(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={
+                "title": "Tax Change Quote",
+                "customer_name": "Tax Payer",
+                "tax_rate": "0.0500",
+                "items": [
+                    {
+                        "description": "Fixed Service",
+                        "quantity": "1.0000",
+                        "unit_price": "200.0000",
+                    }
+                ],
+            },
+        )
+        assert create_res.status_code == 201
+        qid = create_res.json()["id"]
+        assert Decimal(create_res.json()["tax_amount"]) == Decimal("10.0000")
+        assert Decimal(create_res.json()["total_amount"]) == Decimal("210.0000")
+
+        # Update tax rate to 20%
+        update_res = await client.put(
+            f"/quotations/{qid}",
+            json={"tax_rate": "0.2000"},
+        )
+        assert update_res.status_code == 200
+
+        data = update_res.json()
+        assert Decimal(data["subtotal"]) == Decimal("200.0000")
+        assert Decimal(data["tax_amount"]) == Decimal("40.0000")
+        assert Decimal(data["total_amount"]) == Decimal("240.0000")
+
+    @pytest.mark.asyncio
+    async def test_update_replace_with_empty_items(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={
+                "title": "Items to clear",
+                "customer_name": "Customer",
+                "items": [
+                    {"description": "Item", "quantity": "1.0000", "unit_price": "50.0000"}
+                ],
+            },
+        )
+        qid = create_res.json()["id"]
+
+        update_res = await client.put(f"/quotations/{qid}", json={"items": []})
+        assert update_res.status_code == 200
+
+        data = update_res.json()
+        assert data["items"] == []
+        assert Decimal(data["subtotal"]) == Decimal("0.0000")
+        assert Decimal(data["tax_amount"]) == Decimal("0.0000")
+        assert Decimal(data["total_amount"]) == Decimal("0.0000")
+
+    @pytest.mark.asyncio
+    async def test_update_nonexistent_quotation_returns_404(
+        self, client: httpx.AsyncClient
+    ):
+        random_id = str(uuid.uuid4())
+        response = await client.put(
+            f"/quotations/{random_id}",
+            json={"title": "Doesn't exist"},
+        )
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_update_malformed_id_returns_422(
+        self, client: httpx.AsyncClient
+    ):
+        response = await client.put(
+            "/quotations/invalid-uuid",
+            json={"title": "Malformed"},
+        )
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_accepted_quotation_rejected_with_400(
+        self, client: httpx.AsyncClient
+    ):
+        # Create -> sent -> accepted
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Contract Deal", "customer_name": "VIP"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "sent"})
+        await client.patch(f"/quotations/{qid}/status", json={"status": "accepted"})
+
+        # Attempt to edit accepted quote
+        update_res = await client.put(
+            f"/quotations/{qid}",
+            json={"title": "Sneaky Modification"},
+        )
+        assert update_res.status_code == 400
+        assert "cannot update quotation" in update_res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_update_cancelled_quotation_rejected_with_400(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Dead Deal", "customer_name": "Ex-Client"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "cancelled"})
+
+        update_res = await client.put(
+            f"/quotations/{qid}",
+            json={"title": "Revival Attempt"},
+        )
+        assert update_res.status_code == 400
+        assert "cannot update quotation" in update_res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_update_invalid_input_returns_422(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Valid Quote", "customer_name": "Valid Client"},
+        )
+        qid = create_res.json()["id"]
+
+        # Blank title
+        r1 = await client.put(f"/quotations/{qid}", json={"title": "   "})
+        assert r1.status_code == 422
+
+        # Invalid tax rate > 1
+        r2 = await client.put(f"/quotations/{qid}", json={"tax_rate": "2.0000"})
+        assert r2.status_code == 422
+
+        # Negative quantity
+        r3 = await client.put(
+            f"/quotations/{qid}",
+            json={
+                "items": [
+                    {"description": "Item", "quantity": "-1.0000", "unit_price": "10.0000"}
+                ]
+            },
+        )
+        assert r3.status_code == 422
+
+
+# ── Deletion Tests ────────────────────────────────────────────────────────────
+
+class TestDeleteQuotationAPI:
+    """Test suite for DELETE /quotations/{id} endpoint."""
+
+    @pytest.mark.asyncio
+    async def test_delete_quotation_success_and_cascades_items(
+        self, client: httpx.AsyncClient, async_db: AsyncSession
+    ):
+        # Create quote with 2 items
+        create_res = await client.post(
+            "/quotations",
+            json={
+                "title": "To Be Deleted",
+                "customer_name": "Disposable Inc",
+                "items": [
+                    {"description": "Item 1", "quantity": "1.0000", "unit_price": "10.0000"},
+                    {"description": "Item 2", "quantity": "2.0000", "unit_price": "20.0000"},
+                ],
+            },
+        )
+        assert create_res.status_code == 201
+        data = create_res.json()
+        qid = data["id"]
+        item_ids = [uuid.UUID(it["id"]) for it in data["items"]]
+
+        # Delete quotation
+        del_res = await client.delete(f"/quotations/{qid}")
+        assert del_res.status_code == 204
+
+        # GET should now return 404
+        get_res = await client.get(f"/quotations/{qid}")
+        assert get_res.status_code == 404
+
+        # Verify in DB that associated items were cascade-deleted
+        item_records = await async_db.execute(
+            select(QuotationItem).where(QuotationItem.id.in_(item_ids))
+        )
+        assert len(list(item_records.scalars().all())) == 0
+
+    @pytest.mark.asyncio
+    async def test_delete_nonexistent_quotation_returns_404(
+        self, client: httpx.AsyncClient
+    ):
+        random_id = str(uuid.uuid4())
+        response = await client.delete(f"/quotations/{random_id}")
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_delete_malformed_id_returns_422(
+        self, client: httpx.AsyncClient
+    ):
+        response = await client.delete("/quotations/not-a-valid-uuid")
+        assert response.status_code == 422
+
+
+# ── Status Transition Tests ──────────────────────────────────────────────────
+
+class TestQuotationStatusAPI:
+    """Test suite for PATCH /quotations/{id}/status endpoint and lifecycle transitions."""
+
+    @pytest.mark.asyncio
+    async def test_valid_transition_draft_to_sent(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Draft Quote", "customer_name": "Prospect"},
+        )
+        qid = create_res.json()["id"]
+        assert create_res.json()["status"] == "draft"
+
+        patch_res = await client.patch(
+            f"/quotations/{qid}/status",
+            json={"status": "sent"},
+        )
+        assert patch_res.status_code == 200
+        assert patch_res.json()["status"] == "sent"
+
+    @pytest.mark.asyncio
+    async def test_valid_lifecycle_happy_path_to_accepted(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Happy Path Quote", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        # draft -> sent
+        s1 = await client.patch(f"/quotations/{qid}/status", json={"status": "sent"})
+        assert s1.status_code == 200
+        assert s1.json()["status"] == "sent"
+
+        # sent -> accepted
+        s2 = await client.patch(f"/quotations/{qid}/status", json={"status": "accepted"})
+        assert s2.status_code == 200
+        assert s2.json()["status"] == "accepted"
+
+    @pytest.mark.asyncio
+    async def test_valid_transition_sent_reverted_to_draft(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Draft to Revise", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "sent"})
+        revert_res = await client.patch(f"/quotations/{qid}/status", json={"status": "draft"})
+        assert revert_res.status_code == 200
+        assert revert_res.json()["status"] == "draft"
+
+    @pytest.mark.asyncio
+    async def test_valid_transition_sent_to_rejected_and_revived(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Negotiation", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "sent"})
+        reject_res = await client.patch(f"/quotations/{qid}/status", json={"status": "rejected"})
+        assert reject_res.status_code == 200
+        assert reject_res.json()["status"] == "rejected"
+
+        # Rejected can be revised back into draft
+        revive_res = await client.patch(f"/quotations/{qid}/status", json={"status": "draft"})
+        assert revive_res.status_code == 200
+        assert revive_res.json()["status"] == "draft"
+
+    @pytest.mark.asyncio
+    async def test_valid_transition_sent_to_expired_and_revived(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Time-sensitive Quote", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "sent"})
+        expire_res = await client.patch(f"/quotations/{qid}/status", json={"status": "expired"})
+        assert expire_res.status_code == 200
+        assert expire_res.json()["status"] == "expired"
+
+        # Expired can be reopened as draft
+        reopen_res = await client.patch(f"/quotations/{qid}/status", json={"status": "draft"})
+        assert reopen_res.status_code == 200
+        assert reopen_res.json()["status"] == "draft"
+
+    @pytest.mark.asyncio
+    async def test_valid_transition_draft_to_cancelled(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Abortive Quote", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        cancel_res = await client.patch(f"/quotations/{qid}/status", json={"status": "cancelled"})
+        assert cancel_res.status_code == 200
+        assert cancel_res.json()["status"] == "cancelled"
+
+    @pytest.mark.asyncio
+    async def test_rejected_transition_draft_directly_to_accepted(
+        self, client: httpx.AsyncClient
+    ):
+        # A quote cannot jump directly from draft to accepted without being sent
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Draft Quote", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        res = await client.patch(f"/quotations/{qid}/status", json={"status": "accepted"})
+        assert res.status_code == 400
+        assert "invalid status transition" in res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_rejected_transition_draft_to_expired(
+        self, client: httpx.AsyncClient
+    ):
+        # Draft cannot expire without being sent
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Draft Quote", "customer_name": "Client"},
+        )
+        qid = create_res.json()["id"]
+
+        res = await client.patch(f"/quotations/{qid}/status", json={"status": "expired"})
+        assert res.status_code == 400
+        assert "invalid status transition" in res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_rejected_transition_accepted_is_terminal(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Closed Won Deal", "customer_name": "Customer"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "sent"})
+        await client.patch(f"/quotations/{qid}/status", json={"status": "accepted"})
+
+        # Attempt transitions from accepted
+        for target in ["draft", "sent", "rejected", "expired", "cancelled"]:
+            res = await client.patch(f"/quotations/{qid}/status", json={"status": target})
+            assert res.status_code == 400
+            assert "invalid status transition" in res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_rejected_transition_cancelled_is_terminal(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Dead Deal", "customer_name": "Customer"},
+        )
+        qid = create_res.json()["id"]
+
+        await client.patch(f"/quotations/{qid}/status", json={"status": "cancelled"})
+
+        # Attempt transitions from cancelled
+        for target in ["draft", "sent", "accepted", "rejected", "expired"]:
+            res = await client.patch(f"/quotations/{qid}/status", json={"status": target})
+            assert res.status_code == 400
+            assert "invalid status transition" in res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_transition_to_same_status_returns_400(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "No-op Status Quote", "customer_name": "Customer"},
+        )
+        qid = create_res.json()["id"]
+
+        res = await client.patch(f"/quotations/{qid}/status", json={"status": "draft"})
+        assert res.status_code == 400
+        assert "already in 'draft' status" in res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_status_transition_nonexistent_quotation_returns_404(
+        self, client: httpx.AsyncClient
+    ):
+        random_id = str(uuid.uuid4())
+        res = await client.patch(
+            f"/quotations/{random_id}/status",
+            json={"status": "sent"},
+        )
+        assert res.status_code == 404
+        assert "not found" in res.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_status_transition_invalid_enum_returns_422(
+        self, client: httpx.AsyncClient
+    ):
+        create_res = await client.post(
+            "/quotations",
+            json={"title": "Enum Check", "customer_name": "Customer"},
+        )
+        qid = create_res.json()["id"]
+
+        res = await client.patch(
+            f"/quotations/{qid}/status",
+            json={"status": "completely_bogus_status"},
+        )
+        assert res.status_code == 422
 

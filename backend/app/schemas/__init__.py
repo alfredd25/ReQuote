@@ -8,6 +8,8 @@ from app.schemas.quotation import (
     QuotationItemResponse,
     QuotationListResponse,
     QuotationResponse,
+    QuotationStatusUpdate,
+    QuotationUpdate,
 )
 
 __all__ = [
@@ -18,5 +20,7 @@ __all__ = [
     "QuotationItemResponse",
     "QuotationListResponse",
     "QuotationResponse",
+    "QuotationStatusUpdate",
+    "QuotationUpdate",
 ]
 

@@ -43,6 +43,31 @@ class QuotationStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+VALID_STATUS_TRANSITIONS: dict[QuotationStatus, set[QuotationStatus]] = {
+    QuotationStatus.DRAFT: {
+        QuotationStatus.SENT,
+        QuotationStatus.CANCELLED,
+    },
+    QuotationStatus.SENT: {
+        QuotationStatus.ACCEPTED,
+        QuotationStatus.REJECTED,
+        QuotationStatus.EXPIRED,
+        QuotationStatus.CANCELLED,
+        QuotationStatus.DRAFT,
+    },
+    QuotationStatus.EXPIRED: {
+        QuotationStatus.DRAFT,
+        QuotationStatus.CANCELLED,
+    },
+    QuotationStatus.REJECTED: {
+        QuotationStatus.DRAFT,
+        QuotationStatus.CANCELLED,
+    },
+    QuotationStatus.ACCEPTED: set(),
+    QuotationStatus.CANCELLED: set(),
+}
+
+
 # ── Models ───────────────────────────────────────────────────────────────────
 
 class Quotation(TimestampMixin, Base):

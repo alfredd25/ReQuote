@@ -1,10 +1,13 @@
 """
 quotations.py – Quotation API router.
 
-Implements Phase 3 Step 1:
+Implements Phase 3:
 - POST /quotations: Create a quotation with line items and calculated totals.
 - GET /quotations: List quotations with pagination.
 - GET /quotations/{quotation_id}: Retrieve single quotation by UUID.
+- PUT /quotations/{quotation_id}: Update existing quotation details and line items.
+- DELETE /quotations/{quotation_id}: Delete a quotation and cascade-delete its items.
+- PATCH /quotations/{quotation_id}/status: Transition quotation lifecycle status.
 """
 
 from datetime import datetime, timezone
@@ -12,18 +15,25 @@ from decimal import Decimal
 import secrets
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.quotation import Quotation, QuotationItem, QuotationStatus
+from app.models.quotation import (
+    Quotation,
+    QuotationItem,
+    QuotationStatus,
+    VALID_STATUS_TRANSITIONS,
+)
 from app.schemas.quotation import (
     QuotationCreate,
     QuotationListResponse,
     QuotationResponse,
+    QuotationStatusUpdate,
+    QuotationUpdate,
 )
 
 router = APIRouter(prefix="/quotations", tags=["Quotations"])
@@ -202,4 +212,206 @@ async def get_quotation(
         )
 
     return quotation
+
+
+@router.put(
+    "/{quotation_id}",
+    response_model=QuotationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update a quotation",
+    description=(
+        "Update an existing quotation including customer details and line items. "
+        "Line totals, subtotal, tax amount, and total amount are always recalculated server-side."
+    ),
+)
+@router.patch(
+    "/{quotation_id}",
+    response_model=QuotationResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def update_quotation(
+    quotation_id: uuid.UUID,
+    payload: QuotationUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Quotation:
+    """Update quotation details and line items with server-side Decimal recalculation."""
+    result = await db.execute(
+        select(Quotation)
+        .options(selectinload(Quotation.items))
+        .where(Quotation.id == quotation_id)
+    )
+    quotation = result.scalar_one_or_none()
+
+    if quotation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quotation with ID '{quotation_id}' not found.",
+        )
+
+    # Protect finalized/cancelled quotations from modification
+    if quotation.status in (
+        QuotationStatus.ACCEPTED.value,
+        QuotationStatus.CANCELLED.value,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot update quotation in '{quotation.status}' status.",
+        )
+
+    # Update scalar fields if provided
+    if payload.title is not None:
+        quotation.title = payload.title
+    if payload.description is not None:
+        quotation.description = payload.description
+    if payload.customer_name is not None:
+        quotation.customer_name = payload.customer_name
+    if payload.customer_email is not None:
+        quotation.customer_email = payload.customer_email
+    if payload.customer_phone is not None:
+        quotation.customer_phone = payload.customer_phone
+    if payload.customer_company is not None:
+        quotation.customer_company = payload.customer_company
+    if payload.customer_address is not None:
+        quotation.customer_address = payload.customer_address
+    if payload.currency is not None:
+        quotation.currency = payload.currency
+    if payload.tax_rate is not None:
+        quotation.tax_rate = payload.tax_rate
+    if payload.notes is not None:
+        quotation.notes = payload.notes
+    if payload.terms_and_conditions is not None:
+        quotation.terms_and_conditions = payload.terms_and_conditions
+
+    # Update line items if provided (transaction-safe replacement)
+    if payload.items is not None:
+        quotation.items.clear()
+        for idx, item_in in enumerate(payload.items):
+            item_pos = item_in.position if item_in.position is not None else idx + 1
+            qty = item_in.quantity
+            price = item_in.unit_price
+            line_total = (qty * price).quantize(Decimal("0.0001"))
+
+            item = QuotationItem(
+                position=item_pos,
+                description=item_in.description,
+                unit=item_in.unit,
+                quantity=qty,
+                unit_price=price,
+                line_total=line_total,
+            )
+            quotation.items.append(item)
+
+    # Always recalculate totals using Decimal arithmetic
+    quotation.recalculate_totals()
+
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+
+    # Re-fetch with eager loaded items
+    refresh_result = await db.execute(
+        select(Quotation)
+        .options(selectinload(Quotation.items))
+        .where(Quotation.id == quotation.id)
+    )
+    return refresh_result.scalar_one()
+
+
+@router.delete(
+    "/{quotation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a quotation",
+    description="Delete a quotation and all associated line items.",
+)
+async def delete_quotation(
+    quotation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Delete quotation and cascade delete its line items."""
+    result = await db.execute(
+        select(Quotation).where(Quotation.id == quotation_id)
+    )
+    quotation = result.scalar_one_or_none()
+
+    if quotation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quotation with ID '{quotation_id}' not found.",
+        )
+
+    await db.delete(quotation)
+    await db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch(
+    "/{quotation_id}/status",
+    response_model=QuotationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Change quotation status",
+    description="Transition quotation to a new lifecycle status following strict lifecycle rules.",
+)
+@router.put(
+    "/{quotation_id}/status",
+    response_model=QuotationResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def update_quotation_status(
+    quotation_id: uuid.UUID,
+    payload: QuotationStatusUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Quotation:
+    """Transition quotation status according to the valid lifecycle state machine."""
+    result = await db.execute(
+        select(Quotation)
+        .options(selectinload(Quotation.items))
+        .where(Quotation.id == quotation_id)
+    )
+    quotation = result.scalar_one_or_none()
+
+    if quotation is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quotation with ID '{quotation_id}' not found.",
+        )
+
+    current_status = QuotationStatus(quotation.status)
+    new_status = payload.status
+
+    if current_status == new_status:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Quotation is already in '{current_status.value}' status.",
+        )
+
+    allowed_transitions = VALID_STATUS_TRANSITIONS.get(current_status, set())
+    if new_status not in allowed_transitions:
+        allowed_list = sorted([s.value for s in allowed_transitions])
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Invalid status transition from '{current_status.value}' to '{new_status.value}'. "
+                f"Allowed transitions: {allowed_list}."
+            ),
+        )
+
+    quotation.status = new_status.value
+
+    try:
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+
+    refresh_result = await db.execute(
+        select(Quotation)
+        .options(selectinload(Quotation.items))
+        .where(Quotation.id == quotation.id)
+    )
+    return refresh_result.scalar_one()
 
