@@ -12,6 +12,7 @@ conftest or mark.
 
 import pytest
 from decimal import Decimal
+import uuid
 import httpx
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
@@ -25,6 +26,8 @@ from app.database import get_db
 from app.main import app
 from app.models.base import Base
 from app.models.quotation import Quotation, QuotationItem, QuotationStatus
+from app.models.user import User
+from app.security import create_access_token, hash_password
 
 
 # ── In-memory SQLite engine ──────────────────────────────────────────────────
@@ -69,8 +72,27 @@ def db_session(engine):
 
 # ── Sample-data helpers ──────────────────────────────────────────────────────
 
+def make_user(session: Session, **kwargs) -> User:
+    """Create and flush a minimal User."""
+    unique_id = uuid.uuid4().hex[:8]
+    defaults = dict(
+        email=f"user_{unique_id}@example.com",
+        hashed_password="hashed_test_password",
+        full_name="Test User",
+        is_active=True,
+    )
+    defaults.update(kwargs)
+    u = User(**defaults)
+    session.add(u)
+    session.flush()
+    return u
+
+
 def make_quotation(session: Session, **kwargs) -> Quotation:
     """Create and flush a minimal Quotation."""
+    if "user_id" not in kwargs:
+        user = make_user(session)
+        kwargs["user_id"] = user.id
     defaults = dict(
         quotation_number="RQ-TEST-0001",
         title="Test Quote",
@@ -156,3 +178,63 @@ async def client(async_db):
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def auth_user(async_db: AsyncSession) -> User:
+    """Creates a primary authenticated user in the test database."""
+    user = User(
+        email=f"primary_{uuid.uuid4().hex[:8]}@example.com",
+        hashed_password=hash_password("Password123!"),
+        full_name="Primary Test User",
+        is_active=True,
+    )
+    async_db.add(user)
+    await async_db.commit()
+    await async_db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_token(auth_user: User) -> str:
+    """Generates a valid JWT access token for auth_user."""
+    return create_access_token(
+        subject=auth_user.id,
+        extra_claims={"email": auth_user.email},
+    )
+
+
+@pytest.fixture
+def auth_headers(auth_token: str) -> dict[str, str]:
+    """Returns HTTP headers dictionary with the primary user's Bearer token."""
+    return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture
+async def second_user(async_db: AsyncSession) -> User:
+    """Creates a second user in the test database for testing cross-user authorization."""
+    user = User(
+        email=f"second_{uuid.uuid4().hex[:8]}@example.com",
+        hashed_password=hash_password("Password123!"),
+        full_name="Second Test User",
+        is_active=True,
+    )
+    async_db.add(user)
+    await async_db.commit()
+    await async_db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def second_auth_token(second_user: User) -> str:
+    """Generates a valid JWT access token for second_user."""
+    return create_access_token(
+        subject=second_user.id,
+        extra_claims={"email": second_user.email},
+    )
+
+
+@pytest.fixture
+def second_auth_headers(second_auth_token: str) -> dict[str, str]:
+    """Returns HTTP headers dictionary with the second user's Bearer token."""
+    return {"Authorization": f"Bearer {second_auth_token}"}

@@ -15,7 +15,8 @@ from decimal import Decimal
 import pytest
 
 from app.models.quotation import Quotation, QuotationItem, QuotationStatus
-from tests.conftest import make_item, make_quotation
+from app.models.user import User
+from tests.conftest import make_item, make_quotation, make_user
 
 
 # ── QuotationStatus ──────────────────────────────────────────────────────────
@@ -215,3 +216,36 @@ class TestRecalculateTotals:
         assert isinstance(q.total_amount, Decimal)
         for item in q.items:
             assert isinstance(item.line_total, Decimal)
+
+
+# ── User <-> Quotation Relationship tests ─────────────────────────────────────
+
+class TestUserQuotationRelationship:
+    def test_quotation_linked_to_user(self, db_session):
+        user = make_user(db_session)
+        q = make_quotation(db_session, user_id=user.id)
+        assert q.user_id == user.id
+        assert q.user.id == user.id
+        assert q.user.email == user.email
+
+    def test_user_quotations_list(self, db_session):
+        user = make_user(db_session)
+        q1 = make_quotation(db_session, quotation_number="RQ-U-001", user_id=user.id)
+        q2 = make_quotation(db_session, quotation_number="RQ-U-002", user_id=user.id)
+        db_session.refresh(user)
+
+        assert len(user.quotations) == 2
+        user_q_ids = {q.id for q in user.quotations}
+        assert q1.id in user_q_ids
+        assert q2.id in user_q_ids
+
+    def test_cascade_delete_user_deletes_quotations(self, db_session):
+        user = make_user(db_session)
+        q = make_quotation(db_session, user_id=user.id)
+        q_id = q.id
+
+        db_session.delete(user)
+        db_session.flush()
+
+        deleted_q = db_session.get(Quotation, q_id)
+        assert deleted_q is None

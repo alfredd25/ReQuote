@@ -28,6 +28,7 @@ from app.models.quotation import (
     QuotationStatus,
     VALID_STATUS_TRANSITIONS,
 )
+from app.models.user import User
 from app.schemas.quotation import (
     QuotationCreate,
     QuotationListResponse,
@@ -35,6 +36,7 @@ from app.schemas.quotation import (
     QuotationStatusUpdate,
     QuotationUpdate,
 )
+from app.security import get_current_user
 
 router = APIRouter(prefix="/quotations", tags=["Quotations"])
 
@@ -66,6 +68,7 @@ async def _generate_unique_quotation_number(db: AsyncSession) -> str:
 )
 async def create_quotation(
     payload: QuotationCreate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Quotation:
     """Create a new quotation with line items and computed Decimal totals."""
@@ -85,8 +88,9 @@ async def create_quotation(
     else:
         quotation_num = await _generate_unique_quotation_number(db)
 
-    # 2. Build quotation model
+    # 2. Build quotation model with authenticated user ownership
     quotation = Quotation(
+        user_id=current_user.id,
         quotation_number=quotation_num,
         title=payload.title,
         description=payload.description,
@@ -158,11 +162,16 @@ async def create_quotation(
 async def list_quotations(
     page: int = Query(default=1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> QuotationListResponse:
-    """List quotations with pagination."""
-    # Count total
-    total = await db.scalar(select(func.count()).select_from(Quotation))
+    """List quotations with pagination for the authenticated user only."""
+    # Count total for the authenticated user
+    total = await db.scalar(
+        select(func.count())
+        .select_from(Quotation)
+        .where(Quotation.user_id == current_user.id)
+    )
     total = total or 0
 
     total_pages = (total + page_size - 1) // page_size if total > 0 else 0
@@ -171,6 +180,7 @@ async def list_quotations(
     result = await db.execute(
         select(Quotation)
         .options(selectinload(Quotation.items))
+        .where(Quotation.user_id == current_user.id)
         .order_by(Quotation.created_at.desc())
         .offset(offset)
         .limit(page_size)
@@ -195,13 +205,17 @@ async def list_quotations(
 )
 async def get_quotation(
     quotation_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Quotation:
-    """Retrieve single quotation by UUID."""
+    """Retrieve single quotation by UUID belonging to the authenticated user."""
     result = await db.execute(
         select(Quotation)
         .options(selectinload(Quotation.items))
-        .where(Quotation.id == quotation_id)
+        .where(
+            Quotation.id == quotation_id,
+            Quotation.user_id == current_user.id,
+        )
     )
     quotation = result.scalar_one_or_none()
 
@@ -233,13 +247,17 @@ async def get_quotation(
 async def update_quotation(
     quotation_id: uuid.UUID,
     payload: QuotationUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Quotation:
     """Update quotation details and line items with server-side Decimal recalculation."""
     result = await db.execute(
         select(Quotation)
         .options(selectinload(Quotation.items))
-        .where(Quotation.id == quotation_id)
+        .where(
+            Quotation.id == quotation_id,
+            Quotation.user_id == current_user.id,
+        )
     )
     quotation = result.scalar_one_or_none()
 
@@ -328,11 +346,15 @@ async def update_quotation(
 )
 async def delete_quotation(
     quotation_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Delete quotation and cascade delete its line items."""
     result = await db.execute(
-        select(Quotation).where(Quotation.id == quotation_id)
+        select(Quotation).where(
+            Quotation.id == quotation_id,
+            Quotation.user_id == current_user.id,
+        )
     )
     quotation = result.scalar_one_or_none()
 
@@ -364,13 +386,17 @@ async def delete_quotation(
 async def update_quotation_status(
     quotation_id: uuid.UUID,
     payload: QuotationStatusUpdate,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Quotation:
     """Transition quotation status according to the valid lifecycle state machine."""
     result = await db.execute(
         select(Quotation)
         .options(selectinload(Quotation.items))
-        .where(Quotation.id == quotation_id)
+        .where(
+            Quotation.id == quotation_id,
+            Quotation.user_id == current_user.id,
+        )
     )
     quotation = result.scalar_one_or_none()
 

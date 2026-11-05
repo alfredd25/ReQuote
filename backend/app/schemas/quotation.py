@@ -213,6 +213,7 @@ class QuotationResponse(BaseModel):
     """Schema for returning quotation details with line items."""
 
     id: uuid.UUID
+    user_id: uuid.UUID
     quotation_number: str
     title: str
     description: str | None = None

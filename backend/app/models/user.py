@@ -8,13 +8,17 @@ Design notes:
 - Server-side created_at / updated_at timestamps via TimestampMixin.
 """
 
+from typing import TYPE_CHECKING
 import uuid
 
 from sqlalchemy import Boolean, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, new_uuid
+
+if TYPE_CHECKING:
+    from app.models.quotation import Quotation
 
 
 class User(TimestampMixin, Base):
@@ -56,6 +60,14 @@ class User(TimestampMixin, Base):
         default=True,
         nullable=False,
         comment="Active status flag",
+    )
+
+    # ── Relationships ────────────────────────────────────────────────────────
+    quotations: Mapped[list["Quotation"]] = relationship(
+        "Quotation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        order_by="Quotation.created_at.desc()",
     )
 
     def __repr__(self) -> str:

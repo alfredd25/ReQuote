@@ -43,17 +43,18 @@ ReQuote/
     │   └── routers/
     │       ├── auth.py        ← POST /auth/signup, /login, GET /me
     │       ├── health.py      ← GET /health (pings DB)
-    │       └── quotations.py  ← Full Quote CRUD & lifecycle transitions
+    │       └── quotations.py  ← Protected Quote CRUD & lifecycle transitions (ownership scoped)
     ├── alembic/
     │   ├── env.py             ← reads DATABASE_URL at runtime
     │   ├── script.py.mako
     │   └── versions/
     │       ├── 0001_initial_create_quotations_and_items.py
-    │       └── 0002_create_users_table.py
+    │       ├── 0002_create_users_table.py
+    │       └── 0003_add_user_id_to_quotations.py
     ├── tests/
-    │   ├── conftest.py        ← SQLite in-memory sync & async fixtures
-    │   ├── test_models.py     ← 22 model + monetary tests
-    │   ├── test_api_quotations.py ← 50 HTTPX quotation API tests
+    │   ├── conftest.py        ← SQLite in-memory fixtures (auth tokens & ownership fixtures)
+    │   ├── test_models.py     ← 25 model, monetary & relationship tests
+    │   ├── test_api_quotations.py ← 62 HTTPX quotation API tests (auth & ownership isolation)
     │   └── test_auth.py       ← 23 auth & JWT endpoint/unit tests
     ├── alembic.ini
     ├── pytest.ini
@@ -149,6 +150,24 @@ alembic history
 - Actual `.env` files are excluded by `.gitignore` — never commit them.
 - All monetary values use `NUMERIC(12, 4)` / Python `Decimal` — never `float`.
 
+## Authentication & Ownership
+
+Every quotation endpoint requires a valid JWT Bearer token:
+```bash
+# 1. Signup / Login to get an access token
+TOKEN=$(curl -s -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "user@example.com", "password": "SecurePassword123!"}' | jq -r .access_token)
+
+# 2. Access protected quotation endpoints using the token
+curl -X GET http://localhost:8000/quotations \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+- **Unauthenticated requests** receive `401 Unauthorized`.
+- **Automatic ownership**: The authenticated user's ID is assigned to created quotations. Any client-provided `user_id` is ignored/disallowed.
+- **Resource isolation**: Users can only view, update, delete, or transition their own quotations. Requesting another user's quotation returns `404 Not Found` to prevent resource enumeration.
+
 ## Roadmap
 
 - [x] Phase 1: Project foundation (React + FastAPI + PostgreSQL + Docker)
@@ -156,8 +175,8 @@ alembic history
 - [x] Phase 3: Quote CRUD API endpoints
   - [x] Step 1: Quotation creation and retrieval API (schemas, endpoints, calculations, tests)
   - [x] Step 2: Quotation update, deletion, and status transitions
-- [ ] Phase 4: Authentication (JWT)
+- [x] Phase 4: Authentication (JWT)
   - [x] Step 1: Authentication foundation (User model, Alembic migration, bcrypt hashing, JWT access tokens, signup/login/me endpoints, test suite)
-  - [ ] Step 2: Route protection and user-quotation ownership checks
+  - [x] Step 2: Route protection and user-quotation ownership checks
 - [ ] Phase 5: AI-assisted quote generation
 - [ ] Phase 6: CI/CD pipeline

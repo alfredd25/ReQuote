@@ -15,6 +15,7 @@ Design notes
 import uuid
 from decimal import Decimal
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     CheckConstraint,
@@ -28,6 +29,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, new_uuid
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 # ── Status enum ──────────────────────────────────────────────────────────────
@@ -90,6 +94,15 @@ class Quotation(TimestampMixin, Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=new_uuid,
+    )
+
+    # ── User ownership ───────────────────────────────────────────────────────
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="Owner user account ID",
     )
 
     # ── Identification ───────────────────────────────────────────────────────
@@ -164,6 +177,10 @@ class Quotation(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="QuotationItem.position",
         lazy="select",
+    )
+    user: Mapped["User"] = relationship(
+        "User",
+        back_populates="quotations",
     )
 
     # ── Helpers ──────────────────────────────────────────────────────────────
