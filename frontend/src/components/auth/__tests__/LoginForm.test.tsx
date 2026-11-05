@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { LoginForm } from '../LoginForm'
 import * as AuthContextModule from '../../../context/AuthContext'
 
@@ -25,7 +26,11 @@ describe('LoginForm', () => {
   })
 
   it('renders email, password inputs and submit button', () => {
-    render(<LoginForm onSwitchToSignup={mockOnSwitchToSignup} />)
+    render(
+      <MemoryRouter>
+        <LoginForm onSwitchToSignup={mockOnSwitchToSignup} />
+      </MemoryRouter>
+    )
 
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/^password/i)).toBeInTheDocument()
@@ -34,7 +39,11 @@ describe('LoginForm', () => {
   })
 
   it('validates required fields before submitting', async () => {
-    render(<LoginForm />)
+    render(
+      <MemoryRouter>
+        <LoginForm />
+      </MemoryRouter>
+    )
     const submitButton = screen.getByRole('button', { name: /sign in/i })
 
     await userEvent.click(submitButton)
@@ -45,7 +54,11 @@ describe('LoginForm', () => {
   })
 
   it('validates email format', async () => {
-    render(<LoginForm />)
+    render(
+      <MemoryRouter>
+        <LoginForm />
+      </MemoryRouter>
+    )
     const emailInput = screen.getByLabelText(/email address/i)
     const passwordInput = screen.getByLabelText(/^password/i)
     const submitButton = screen.getByRole('button', { name: /sign in/i })
@@ -72,7 +85,11 @@ describe('LoginForm', () => {
       },
     })
 
-    render(<LoginForm onSuccess={mockOnSuccess} />)
+    render(
+      <MemoryRouter>
+        <LoginForm onSuccess={mockOnSuccess} />
+      </MemoryRouter>
+    )
 
     await userEvent.type(screen.getByLabelText(/email address/i), 'USER@example.com')
     await userEvent.type(screen.getByLabelText(/^password/i), 'SecurePass123!')
@@ -90,7 +107,11 @@ describe('LoginForm', () => {
   it('displays error alert on login failure', async () => {
     mockLogin.mockRejectedValueOnce(new Error('Invalid email or password.'))
 
-    render(<LoginForm />)
+    render(
+      <MemoryRouter>
+        <LoginForm />
+      </MemoryRouter>
+    )
 
     await userEvent.type(screen.getByLabelText(/email address/i), 'user@example.com')
     await userEvent.type(screen.getByLabelText(/^password/i), 'wrongpass')
@@ -103,11 +124,14 @@ describe('LoginForm', () => {
   })
 
   it('calls onSwitchToSignup when link is clicked', async () => {
-    render(<LoginForm onSwitchToSignup={mockOnSwitchToSignup} />)
+    render(
+      <MemoryRouter>
+        <LoginForm onSwitchToSignup={mockOnSwitchToSignup} />
+      </MemoryRouter>
+    )
     const switchBtn = screen.getByRole('button', { name: /create account/i })
 
     await userEvent.click(switchBtn)
     expect(mockOnSwitchToSignup).toHaveBeenCalledTimes(1)
   })
 })
-

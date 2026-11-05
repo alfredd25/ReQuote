@@ -1,4 +1,5 @@
 import { useState, FC, FormEvent } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
@@ -10,6 +11,12 @@ export interface SignupFormProps {
   onSuccess?: () => void
 }
 
+interface LocationState {
+  from?: {
+    pathname: string
+  }
+}
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export const SignupForm: FC<SignupFormProps> = ({
@@ -17,6 +24,9 @@ export const SignupForm: FC<SignupFormProps> = ({
   onSuccess,
 }) => {
   const { signup, login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -89,6 +99,10 @@ export const SignupForm: FC<SignupFormProps> = ({
 
       if (onSuccess) {
         onSuccess()
+      } else {
+        const state = location.state as LocationState | null
+        const destination = state?.from?.pathname || '/dashboard'
+        navigate(destination, { replace: true })
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed'
@@ -190,9 +204,9 @@ export const SignupForm: FC<SignupFormProps> = ({
         </Button>
       </form>
 
-      {onSwitchToLogin && (
-        <div className="auth-footer">
-          Already have an account?{' '}
+      <div className="auth-footer">
+        Already have an account?{' '}
+        {onSwitchToLogin ? (
           <button
             type="button"
             className="auth-link"
@@ -200,8 +214,12 @@ export const SignupForm: FC<SignupFormProps> = ({
           >
             Sign in
           </button>
-        </div>
-      )}
+        ) : (
+          <Link to="/login" className="auth-link">
+            Sign in
+          </Link>
+        )}
+      </div>
     </div>
   )
 }

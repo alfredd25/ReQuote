@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { SignupForm } from '../SignupForm'
 import * as AuthContextModule from '../../../context/AuthContext'
 
@@ -26,7 +27,11 @@ describe('SignupForm', () => {
   })
 
   it('renders all form inputs and submit button', () => {
-    render(<SignupForm onSwitchToLogin={mockOnSwitchToLogin} />)
+    render(
+      <MemoryRouter>
+        <SignupForm onSwitchToLogin={mockOnSwitchToLogin} />
+      </MemoryRouter>
+    )
 
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument()
@@ -37,7 +42,11 @@ describe('SignupForm', () => {
   })
 
   it('validates required fields', async () => {
-    render(<SignupForm />)
+    render(
+      <MemoryRouter>
+        <SignupForm />
+      </MemoryRouter>
+    )
     const submitBtn = screen.getByRole('button', { name: /create account/i })
 
     await userEvent.click(submitBtn)
@@ -48,7 +57,11 @@ describe('SignupForm', () => {
   })
 
   it('enforces password minimum length of 8 characters', async () => {
-    render(<SignupForm />)
+    render(
+      <MemoryRouter>
+        <SignupForm />
+      </MemoryRouter>
+    )
 
     await userEvent.type(screen.getByLabelText(/email address/i), 'user@example.com')
     await userEvent.type(screen.getByLabelText(/^password/i), 'short')
@@ -60,7 +73,11 @@ describe('SignupForm', () => {
   })
 
   it('detects mismatched password confirmation', async () => {
-    render(<SignupForm />)
+    render(
+      <MemoryRouter>
+        <SignupForm />
+      </MemoryRouter>
+    )
 
     await userEvent.type(screen.getByLabelText(/email address/i), 'user@example.com')
     await userEvent.type(screen.getByLabelText(/^password/i), 'Password123!')
@@ -93,7 +110,11 @@ describe('SignupForm', () => {
       },
     })
 
-    render(<SignupForm onSuccess={mockOnSuccess} />)
+    render(
+      <MemoryRouter>
+        <SignupForm onSuccess={mockOnSuccess} />
+      </MemoryRouter>
+    )
 
     await userEvent.type(screen.getByLabelText(/full name/i), 'New Contractor')
     await userEvent.type(screen.getByLabelText(/email address/i), 'NewUser@example.com')
@@ -120,7 +141,11 @@ describe('SignupForm', () => {
       new Error('An account with this email address already exists.')
     )
 
-    render(<SignupForm />)
+    render(
+      <MemoryRouter>
+        <SignupForm />
+      </MemoryRouter>
+    )
 
     await userEvent.type(screen.getByLabelText(/email address/i), 'existing@example.com')
     await userEvent.type(screen.getByLabelText(/^password/i), 'Password123!')
@@ -136,11 +161,14 @@ describe('SignupForm', () => {
   })
 
   it('calls onSwitchToLogin when clicking sign in link', async () => {
-    render(<SignupForm onSwitchToLogin={mockOnSwitchToLogin} />)
+    render(
+      <MemoryRouter>
+        <SignupForm onSwitchToLogin={mockOnSwitchToLogin} />
+      </MemoryRouter>
+    )
     const switchBtn = screen.getByRole('button', { name: /sign in/i })
 
     await userEvent.click(switchBtn)
     expect(mockOnSwitchToLogin).toHaveBeenCalledTimes(1)
   })
 })
-

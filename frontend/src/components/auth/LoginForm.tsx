@@ -1,4 +1,5 @@
 import { useState, FC, FormEvent } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Alert } from '../ui/Alert'
 import { Button } from '../ui/Button'
@@ -10,6 +11,12 @@ export interface LoginFormProps {
   onSuccess?: () => void
 }
 
+interface LocationState {
+  from?: {
+    pathname: string
+  }
+}
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export const LoginForm: FC<LoginFormProps> = ({
@@ -17,6 +24,9 @@ export const LoginForm: FC<LoginFormProps> = ({
   onSuccess,
 }) => {
   const { login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
@@ -55,8 +65,13 @@ export const LoginForm: FC<LoginFormProps> = ({
         email: email.trim().toLowerCase(),
         password,
       })
+
       if (onSuccess) {
         onSuccess()
+      } else {
+        const state = location.state as LocationState | null
+        const destination = state?.from?.pathname || '/dashboard'
+        navigate(destination, { replace: true })
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid credentials'
@@ -127,9 +142,9 @@ export const LoginForm: FC<LoginFormProps> = ({
         </Button>
       </form>
 
-      {onSwitchToSignup && (
-        <div className="auth-footer">
-          Don&apos;t have an account?{' '}
+      <div className="auth-footer">
+        Don&apos;t have an account?{' '}
+        {onSwitchToSignup ? (
           <button
             type="button"
             className="auth-link"
@@ -137,8 +152,12 @@ export const LoginForm: FC<LoginFormProps> = ({
           >
             Create account
           </button>
-        </div>
-      )}
+        ) : (
+          <Link to="/signup" className="auth-link">
+            Create account
+          </Link>
+        )}
+      </div>
     </div>
   )
 }

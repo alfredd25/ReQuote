@@ -183,8 +183,9 @@ curl -X GET http://localhost:8000/quotations \
 - [x] Phase 4: Authentication (JWT)
   - [x] Step 1: Authentication foundation (User model, Alembic migration, bcrypt hashing, JWT access tokens, signup/login/me endpoints, test suite)
   - [x] Step 2: Route protection and user-quotation ownership checks
-- [ ] Phase 5: Frontend Integration & Quotation Management
+- [x] Phase 5: Frontend Integration & Authentication
   - [x] Step 1: Frontend signup, login, React AuthContext, and token management
-  - [ ] Step 2: Protected quotation dashboard & management UI
-- [ ] Phase 6: AI-assisted quote generation
-- [ ] Phase 7: CI/CD pipeline
+  - [x] Step 2: Protected routes, public routes, session restoration, and authenticated dashboard layout
+- [ ] Phase 6: Frontend Quotation Workspace & Management UI
+- [ ] Phase 7: AI-assisted quote generation
+- [ ] Phase 8: CI/CD pipeline

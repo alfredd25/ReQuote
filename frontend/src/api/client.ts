@@ -30,12 +30,18 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
-// Response interceptor: handle 401 and parse errors
+// Response interceptor: handle 401 without infinite loops
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiErrorResponse>) => {
-    if (error.response?.status === 401) {
-      // Clear expired / invalid token
+    const requestUrl = error.config?.url || ''
+    // Exclude /auth/login and /auth/signup from triggering global session-clearing events,
+    // so failed credential submissions display normal form errors rather than redirecting/looping.
+    const isLoginOrSignup =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/signup')
+
+    if (error.response?.status === 401 && !isLoginOrSignup) {
+      // Clear expired / invalid / revoked token
       removeStoredToken()
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('requote:unauthorized'))
@@ -89,4 +95,3 @@ export function extractErrorMessage(error: unknown, fallbackMessage = 'An unexpe
 
   return fallbackMessage
 }
-
