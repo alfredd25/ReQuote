@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import health, quotations
+from app.routers import auth, health, quotations
 
 app = FastAPI(
     title="ReQuote API",
@@ -25,6 +25,8 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(health.router, prefix="/api", include_in_schema=False)
+app.include_router(auth.router)
+app.include_router(auth.router, prefix="/api", include_in_schema=False)
 app.include_router(quotations.router)
 app.include_router(quotations.router, prefix="/api", include_in_schema=False)
 

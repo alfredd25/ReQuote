@@ -22,5 +22,10 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:80"]
 
+    # Authentication / JWT
+    jwt_secret_key: str = "changeme_super_secret_jwt_key_at_least_32_bytes_long_requote_2026"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60
+
 
 settings = Settings()

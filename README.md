@@ -29,22 +29,32 @@ ReQuote/
 │
 └── backend/
     ├── app/
-    │   ├── main.py            ← FastAPI app + CORS
+    │   ├── main.py            ← FastAPI app + CORS + routers
     │   ├── config.py          ← Pydantic settings (reads .env)
     │   ├── database.py        ← SQLAlchemy async engine + session
+    │   ├── security.py        ← bcrypt password hashing & PyJWT tokens
     │   ├── models/
     │   │   ├── base.py        ← DeclarativeBase + TimestampMixin
-    │   │   └── quotation.py   ← Quotation + QuotationItem models
+    │   │   ├── quotation.py   ← Quotation + QuotationItem models
+    │   │   └── user.py        ← User model
+    │   ├── schemas/
+    │   │   ├── quotation.py   ← Quotation Pydantic schemas
+    │   │   └── user.py        ← User & Auth Pydantic schemas
     │   └── routers/
-    │       └── health.py      ← GET /health (pings DB)
+    │       ├── auth.py        ← POST /auth/signup, /login, GET /me
+    │       ├── health.py      ← GET /health (pings DB)
+    │       └── quotations.py  ← Full Quote CRUD & lifecycle transitions
     ├── alembic/
     │   ├── env.py             ← reads DATABASE_URL at runtime
     │   ├── script.py.mako
     │   └── versions/
-    │       └── 0001_initial_create_quotations_and_items.py
+    │       ├── 0001_initial_create_quotations_and_items.py
+    │       └── 0002_create_users_table.py
     ├── tests/
-    │   ├── conftest.py        ← SQLite in-memory fixtures
-    │   └── test_models.py     ← 22 model + monetary tests
+    │   ├── conftest.py        ← SQLite in-memory sync & async fixtures
+    │   ├── test_models.py     ← 22 model + monetary tests
+    │   ├── test_api_quotations.py ← 50 HTTPX quotation API tests
+    │   └── test_auth.py       ← 23 auth & JWT endpoint/unit tests
     ├── alembic.ini
     ├── pytest.ini
     └── requirements.txt
@@ -143,7 +153,11 @@ alembic history
 
 - [x] Phase 1: Project foundation (React + FastAPI + PostgreSQL + Docker)
 - [x] Phase 2: Database foundation (SQLAlchemy models + Alembic migrations + tests)
-- [ ] Phase 3: Quote CRUD API endpoints
+- [x] Phase 3: Quote CRUD API endpoints
+  - [x] Step 1: Quotation creation and retrieval API (schemas, endpoints, calculations, tests)
+  - [x] Step 2: Quotation update, deletion, and status transitions
 - [ ] Phase 4: Authentication (JWT)
+  - [x] Step 1: Authentication foundation (User model, Alembic migration, bcrypt hashing, JWT access tokens, signup/login/me endpoints, test suite)
+  - [ ] Step 2: Route protection and user-quotation ownership checks
 - [ ] Phase 5: AI-assisted quote generation
 - [ ] Phase 6: CI/CD pipeline

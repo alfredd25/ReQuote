@@ -11,14 +11,21 @@ from the plain postgresql:// scheme automatically.
 import os
 import re
 from logging.config import fileConfig
+from pathlib import Path
 
+from dotenv import load_dotenv
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+# Load .env from backend directory or project root if not already set
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 
 # ── Import all models so Alembic can detect schema changes ───────────────────
 # This must happen before target_metadata is read.
 from app.models import Base  # noqa: F401 – registers all model metadata
 import app.models.quotation  # noqa: F401 – explicit import for safety
+import app.models.user  # noqa: F401 – explicit import for safety
 
 # ── Alembic Config object ────────────────────────────────────────────────────
 config = context.config
