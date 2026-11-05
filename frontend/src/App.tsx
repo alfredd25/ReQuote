@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthPage } from './pages/AuthPage'
+import { UserProfileCard } from './components/auth/UserProfileCard'
+import { apiClient } from './api/client'
 import './App.css'
 
 interface HealthStatus {
@@ -7,31 +11,30 @@ interface HealthStatus {
   version: string
 }
 
-function App() {
+function MainContent() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [health, setHealth] = useState<HealthStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loadingHealth, setLoadingHealth] = useState(true)
+  const [healthError, setHealthError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/health')
+    // Ping backend health endpoint
+    apiClient
+      .get<HealthStatus>('/health')
       .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json() as Promise<HealthStatus>
-      })
-      .then((data) => {
-        setHealth(data)
-        setLoading(false)
+        setHealth(res.data)
+        setLoadingHealth(false)
       })
       .catch((err: Error) => {
-        setError(err.message)
-        setLoading(false)
+        setHealthError(err.message)
+        setLoadingHealth(false)
       })
   }, [])
 
   return (
     <div className="app">
       <header className="hero">
-        <div className="hero-badge">Phase 1 · Foundation</div>
+        <div className="hero-badge">Phase 5 · Authentication &amp; User Access</div>
         <h1 className="hero-title">
           Re<span className="accent">Quote</span>
         </h1>
@@ -40,53 +43,74 @@ function App() {
         </p>
       </header>
 
-      <main className="main">
-        <section className="card status-card">
-          <div className="card-header">
-            <div className="status-icon">
-              {loading ? '⏳' : error ? '❌' : '✅'}
+      <main className="main-content-flow">
+        {authLoading ? (
+          <div className="card" style={{ maxWidth: '460px', margin: '0 auto', textAlign: 'center' }}>
+            <p className="status-text loading">Checking authentication session…</p>
+          </div>
+        ) : isAuthenticated ? (
+          <UserProfileCard />
+        ) : (
+          <AuthPage />
+        )}
+
+        {/* Backend & Environment Health Verification */}
+        <section className="status-container">
+          <div className="card status-card">
+            <div className="card-header">
+              <div className="status-icon">
+                {loadingHealth ? '⏳' : healthError ? '❌' : '✅'}
+              </div>
+              <h2>Backend Health</h2>
             </div>
-            <h2>Backend Health</h2>
+
+            {loadingHealth && <p className="status-text loading">Pinging backend…</p>}
+
+            {healthError && (
+              <div className="status-error">
+                <p className="status-text">Could not reach backend</p>
+                <code>{healthError}</code>
+              </div>
+            )}
+
+            {health && (
+              <div className="status-grid">
+                <div className="status-item">
+                  <span className="label">Status</span>
+                  <span className="value healthy">{health.status}</span>
+                </div>
+                <div className="status-item">
+                  <span className="label">Service</span>
+                  <span className="value">{health.service}</span>
+                </div>
+                <div className="status-item">
+                  <span className="label">Version</span>
+                  <span className="value">{health.version}</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {loading && <p className="status-text loading">Pinging backend…</p>}
-
-          {error && (
-            <div className="status-error">
-              <p className="status-text">Could not reach backend</p>
-              <code>{error}</code>
-            </div>
-          )}
-
-          {health && (
-            <div className="status-grid">
-              <div className="status-item">
-                <span className="label">Status</span>
-                <span className="value healthy">{health.status}</span>
-              </div>
-              <div className="status-item">
-                <span className="label">Service</span>
-                <span className="value">{health.service}</span>
-              </div>
-              <div className="status-item">
-                <span className="label">Version</span>
-                <span className="value">{health.version}</span>
-              </div>
-            </div>
-          )}
-        </section>
-
-        <section className="card info-card">
-          <h2>Stack</h2>
-          <ul className="stack-list">
-            <li><span className="pill frontend">Frontend</span> React 18 + Vite + TypeScript</li>
-            <li><span className="pill backend">Backend</span> Python 3.12 + FastAPI</li>
-            <li><span className="pill db">Database</span> PostgreSQL 16</li>
-            <li><span className="pill infra">Infra</span> Docker + Docker Compose</li>
-          </ul>
+          <div className="card info-card">
+            <h2>Stack &amp; Security</h2>
+            <ul className="stack-list">
+              <li><span className="pill frontend">Frontend</span> React 18 · TypeScript · Vite · Axios</li>
+              <li><span className="pill backend">Backend</span> FastAPI · PyJWT · Passlib / Bcrypt</li>
+              <li><span className="pill db">Database</span> PostgreSQL 16 · SQLAlchemy 2.0 (async)</li>
+              <li><span className="pill infra">Security</span> Scoped User Ownership &amp; Protected APIs</li>
+            </ul>
+          </div>
         </section>
       </main>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <MainContent />
+    </AuthProvider>
   )
 }
 

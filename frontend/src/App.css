@@ -48,7 +48,7 @@
   max-width: 44ch;
 }
 
-/* ── Main grid ───────────────────────────────────────────────────── */
+/* ── Main grid & Flow ────────────────────────────────────────────── */
 .main {
   width: 100%;
   max-width: 860px;
@@ -57,8 +57,24 @@
   gap: 1.25rem;
 }
 
+.main-content-flow {
+  width: 100%;
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+.status-container {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
 @media (max-width: 640px) {
-  .main { grid-template-columns: 1fr; }
+  .main, .status-container { grid-template-columns: 1fr; }
 }
 
 /* ── Card ────────────────────────────────────────────────────────── */

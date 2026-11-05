@@ -103,11 +103,16 @@ cd backend
 
 ### 6. Run tests
 
-Tests use an in-memory SQLite engine — no running PostgreSQL required:
-
+**Backend tests** (in-memory SQLite engine — no PostgreSQL required):
 ```bash
 cd backend
 .venv\Scripts\python -m pytest -v
+```
+
+**Frontend tests** (Vitest + React Testing Library):
+```bash
+cd frontend
+npm run test
 ```
 
 ### 7. Stop
@@ -178,5 +183,8 @@ curl -X GET http://localhost:8000/quotations \
 - [x] Phase 4: Authentication (JWT)
   - [x] Step 1: Authentication foundation (User model, Alembic migration, bcrypt hashing, JWT access tokens, signup/login/me endpoints, test suite)
   - [x] Step 2: Route protection and user-quotation ownership checks
-- [ ] Phase 5: AI-assisted quote generation
-- [ ] Phase 6: CI/CD pipeline
+- [ ] Phase 5: Frontend Integration & Quotation Management
+  - [x] Step 1: Frontend signup, login, React AuthContext, and token management
+  - [ ] Step 2: Protected quotation dashboard & management UI
+- [ ] Phase 6: AI-assisted quote generation
+- [ ] Phase 7: CI/CD pipeline
