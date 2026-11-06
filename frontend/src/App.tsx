@@ -6,6 +6,8 @@ import { DashboardLayout } from './components/layout/DashboardLayout'
 import { LoginPage } from './pages/LoginPage'
 import { SignupPage } from './pages/SignupPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { QuotationListPage } from './pages/QuotationListPage'
+import { CreateQuotationPage } from './pages/CreateQuotationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import './App.css'
 
@@ -25,6 +27,8 @@ export function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/quotations" element={<QuotationListPage />} />
+          <Route path="/quotations/new" element={<CreateQuotationPage />} />
         </Route>
       </Route>
 

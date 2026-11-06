@@ -24,7 +24,7 @@ export const Navbar: FC = () => {
           <span className="navbar-logo">
             Re<span className="accent">Quote</span>
           </span>
-          <span className="navbar-badge">Phase 5</span>
+          <span className="navbar-badge">Phase 6</span>
         </Link>
 
         <nav className="navbar-nav" aria-label="Main Navigation">
@@ -34,10 +34,22 @@ export const Navbar: FC = () => {
           >
             Dashboard
           </NavLink>
+          <NavLink
+            to="/quotations"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            Quotations
+          </NavLink>
         </nav>
       </div>
 
       <div className="navbar-user-section">
+        <Link to="/quotations/new" style={{ textDecoration: 'none' }}>
+          <Button variant="primary" size="sm">
+            + New Quote
+          </Button>
+        </Link>
+
         {user && (
           <div className="user-badge" title={`Signed in as ${user.email}`}>
             <span className="user-avatar-sm" aria-hidden="true">
@@ -53,4 +65,3 @@ export const Navbar: FC = () => {
     </header>
   )
 }
-
