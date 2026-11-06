@@ -171,7 +171,33 @@ curl -X GET http://localhost:8000/quotations \
 
 - **Unauthenticated requests** receive `401 Unauthorized`.
 - **Automatic ownership**: The authenticated user's ID is assigned to created quotations. Any client-provided `user_id` is ignored/disallowed.
-- **Resource isolation**: Users can only view, update, delete, or transition their own quotations. Requesting another user's quotation returns `404 Not Found` to prevent resource enumeration.
+- **Resource isolation**: Users can only view, update, delete, transition, or export their own quotations. Requesting another user's quotation returns `404 Not Found` to prevent resource enumeration.
+
+## PDF Generation & Export (Phase 7)
+
+Quotations can be exported as print-ready, professional PDF documents via the authenticated endpoint:
+```bash
+curl -X GET http://localhost:8000/quotations/{quotation_id}/pdf \
+  -H "Authorization: Bearer $TOKEN" \
+  -o quotation.pdf
+```
+
+### Configurable Business Settings
+The business contact details displayed on the PDF header and footer can be customized via `.env`:
+```env
+BUSINESS_NAME=ReQuote Solutions
+BUSINESS_EMAIL=contact@requote.io
+BUSINESS_PHONE=+1 (555) 019-2834
+BUSINESS_ADDRESS=100 Innovation Way, Suite 500, San Francisco, CA 94105
+BUSINESS_WEBSITE=https://requote.io
+```
+
+### PDF Features
+- **Print-ready typography & layout**: Uses ReportLab with 2-pass `NumberedCanvas` ("Page X of Y"), brand color accents, and crisp table borders.
+- **Complete itemization**: Deliverables, units, quantities, unit prices, and Decimal-accurate line totals.
+- **Accurate financial summary**: Subtotal, tax rate & amount, and grand total in the quotation's currency.
+- **Client & project scope**: Structured customer billing info, project description, status badge, client notes, and terms & conditions.
+- **Security & ownership**: Full user-isolation; unauthenticated requests get `401`, and unauthorized/cross-user requests return `404`.
 
 ## Roadmap
 
@@ -189,5 +215,5 @@ curl -X GET http://localhost:8000/quotations \
 - [x] Phase 6: Frontend Quotation Workspace & Management UI
   - [x] Step 1: Quotation dashboard metrics, listing with search/filter/pagination, and dynamic creation form
   - [x] Step 2: Quotation detail, editing, deletion, and status lifecycle management
-- [ ] Phase 7: AI-assisted quote generation
+- [x] Phase 7: Professional PDF Quotation Generation and Export
 - [ ] Phase 8: CI/CD pipeline
