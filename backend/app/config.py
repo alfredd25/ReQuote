@@ -27,5 +27,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 60
 
+    # Business Details (Quotation PDF Header & Issuer Information)
+    business_name: str = "ReQuote Solutions"
+    business_email: str = "contact@requote.io"
+    business_phone: str = "+1 (555) 019-2834"
+    business_address: str = "100 Innovation Way, Suite 500, San Francisco, CA 94105"
+    business_website: str = "https://requote.io"
+
 
 settings = Settings()
