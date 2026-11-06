@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, health, quotations
+from app.routers import auth, health, profile, quotations
 
 app = FastAPI(
     title="ReQuote API",
@@ -29,6 +29,10 @@ app.include_router(auth.router)
 app.include_router(auth.router, prefix="/api", include_in_schema=False)
 app.include_router(quotations.router)
 app.include_router(quotations.router, prefix="/api", include_in_schema=False)
+app.include_router(profile.router)
+app.include_router(profile.router, prefix="/api", include_in_schema=False)
+app.include_router(profile.router, prefix="/business-profile", include_in_schema=False)
+app.include_router(profile.router, prefix="/api/business-profile", include_in_schema=False)
 
 
 @app.get("/", include_in_schema=False)

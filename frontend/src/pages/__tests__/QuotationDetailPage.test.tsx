@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { QuotationDetailPage } from '../QuotationDetailPage'
-import { quotationsApi } from '../../api/quotations'
+import { quotationsApi, triggerFileDownload } from '../../api/quotations'
 import { QuotationResponse } from '../../types/quotation'
 
 vi.mock('../../api/quotations', () => ({
@@ -11,7 +11,9 @@ vi.mock('../../api/quotations', () => ({
     getQuotation: vi.fn(),
     deleteQuotation: vi.fn(),
     updateQuotationStatus: vi.fn(),
+    downloadQuotationPdf: vi.fn(),
   },
+  triggerFileDownload: vi.fn(),
 }))
 
 const mockQuote: QuotationResponse = {
@@ -222,5 +224,61 @@ describe('QuotationDetailPage', () => {
 
     const editBtn = screen.getByRole('button', { name: /edit quote/i })
     expect(editBtn).toBeDisabled()
+  })
+
+  it('triggers PDF download when clicking Download PDF button', async () => {
+    vi.mocked(quotationsApi.getQuotation).mockResolvedValue(mockQuote)
+    const mockBlob = new Blob(['%PDF-1.4 mock content'], { type: 'application/pdf' })
+    vi.mocked(quotationsApi.downloadQuotationPdf).mockResolvedValue(mockBlob)
+
+    render(
+      <MemoryRouter initialEntries={['/quotations/q123']}>
+        <Routes>
+          <Route path="/quotations/:id" element={<QuotationDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('RQ-20261106-001')).toBeInTheDocument()
+    })
+
+    const downloadBtn = screen.getByRole('button', { name: /download pdf/i })
+    await userEvent.click(downloadBtn)
+
+    expect(quotationsApi.downloadQuotationPdf).toHaveBeenCalledWith('q123')
+    expect(triggerFileDownload).toHaveBeenCalledWith(
+      mockBlob,
+      'quotation-RQ-20261106-001.pdf'
+    )
+    await waitFor(() => {
+      expect(screen.getByText(/quotation pdf generated and downloaded/i)).toBeInTheDocument()
+    })
+  })
+
+  it('displays error alert when PDF download fails', async () => {
+    vi.mocked(quotationsApi.getQuotation).mockResolvedValue(mockQuote)
+    vi.mocked(quotationsApi.downloadQuotationPdf).mockRejectedValue(
+      new Error('Failed to generate PDF')
+    )
+
+    render(
+      <MemoryRouter initialEntries={['/quotations/q123']}>
+        <Routes>
+          <Route path="/quotations/:id" element={<QuotationDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('RQ-20261106-001')).toBeInTheDocument()
+    })
+
+    const downloadBtn = screen.getByRole('button', { name: /download pdf/i })
+    await userEvent.click(downloadBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText(/failed to generate pdf/i)).toBeInTheDocument()
+    })
   })
 })

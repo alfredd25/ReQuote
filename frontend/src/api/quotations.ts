@@ -80,4 +80,29 @@ export const quotationsApi = {
     )
     return response.data
   },
+
+  /**
+   * Download a quotation as a PDF Blob with authenticated Bearer token.
+   */
+  async downloadQuotationPdf(id: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(`/quotations/${id}/pdf`, {
+      responseType: 'blob',
+    })
+    return response.data
+  },
+}
+
+/**
+ * Helper to trigger a browser file download from a Blob.
+ */
+export function triggerFileDownload(blob: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.style.display = 'none'
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  window.URL.revokeObjectURL(url)
+  document.body.removeChild(a)
 }

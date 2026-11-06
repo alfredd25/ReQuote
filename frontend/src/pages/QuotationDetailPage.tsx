@@ -1,6 +1,6 @@
 import { FC, useEffect, useState, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { quotationsApi } from '../api/quotations'
+import { quotationsApi, triggerFileDownload } from '../api/quotations'
 import { extractErrorMessage } from '../api/client'
 import { QuotationResponse } from '../types/quotation'
 import { formatCurrency, formatDateTime } from '../utils/formatters'
@@ -26,6 +26,7 @@ export const QuotationDetailPage: FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [actionSuccess, setActionSuccess] = useState<string | null>(null)
 
@@ -75,6 +76,23 @@ export const QuotationDetailPage: FC = () => {
     setQuotation(updated)
     setActionSuccess(`Quotation status changed to '${updated.status}'.`)
     setTimeout(() => setActionSuccess(null), 4000)
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!quotation) return
+    setIsDownloadingPdf(true)
+    setActionError(null)
+    try {
+      const blob = await quotationsApi.downloadQuotationPdf(quotation.id)
+      triggerFileDownload(blob, `quotation-${quotation.quotation_number}.pdf`)
+      setActionSuccess('Quotation PDF generated and downloaded.')
+      setTimeout(() => setActionSuccess(null), 3500)
+    } catch (err) {
+      const msg = extractErrorMessage(err, 'Failed to download quotation PDF')
+      setActionError(msg)
+    } finally {
+      setIsDownloadingPdf(false)
+    }
   }
 
   if (isLoading) {
@@ -188,6 +206,17 @@ export const QuotationDetailPage: FC = () => {
 
         {/* Action Controls */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={handleDownloadPdf}
+            isLoading={isDownloadingPdf}
+            title="Download printable PDF quotation"
+          >
+            📄 Download PDF
+          </Button>
+
           <Button
             type="button"
             variant="secondary"

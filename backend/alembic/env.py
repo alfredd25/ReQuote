@@ -26,6 +26,7 @@ load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 from app.models import Base  # noqa: F401 – registers all model metadata
 import app.models.quotation  # noqa: F401 – explicit import for safety
 import app.models.user  # noqa: F401 – explicit import for safety
+import app.models.business_profile  # noqa: F401 – explicit import for safety
 
 # ── Alembic Config object ────────────────────────────────────────────────────
 config = context.config

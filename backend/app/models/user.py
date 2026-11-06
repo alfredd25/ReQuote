@@ -19,6 +19,7 @@ from app.models.base import Base, TimestampMixin, new_uuid
 
 if TYPE_CHECKING:
     from app.models.quotation import Quotation
+    from app.models.business_profile import BusinessProfile
 
 
 class User(TimestampMixin, Base):
@@ -68,6 +69,12 @@ class User(TimestampMixin, Base):
         back_populates="user",
         cascade="all, delete-orphan",
         order_by="Quotation.created_at.desc()",
+    )
+    business_profile: Mapped["BusinessProfile | None"] = relationship(
+        "BusinessProfile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:

@@ -4,6 +4,7 @@
 from app.models.base import Base, TimestampMixin
 from app.models.quotation import Quotation, QuotationItem, QuotationStatus
 from app.models.user import User
+from app.models.business_profile import BusinessProfile
 
 __all__ = [
     "Base",
@@ -12,4 +13,5 @@ __all__ = [
     "QuotationItem",
     "QuotationStatus",
     "User",
+    "BusinessProfile",
 ]

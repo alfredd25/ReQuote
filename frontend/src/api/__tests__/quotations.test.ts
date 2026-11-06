@@ -79,5 +79,17 @@ describe('quotationsApi', () => {
     expect(getSpy).toHaveBeenCalledWith('/quotations/123e4567-e89b-12d3-a456-426614174000')
     expect(result.id).toBe('123e4567-e89b-12d3-a456-426614174000')
   })
+
+  it('calls GET /quotations/:id/pdf to download quotation PDF with blob responseType', async () => {
+    const mockBlob = new Blob(['%PDF-1.4 test'], { type: 'application/pdf' })
+    const getSpy = vi.spyOn(apiClient, 'get').mockResolvedValueOnce({ data: mockBlob })
+
+    const result = await quotationsApi.downloadQuotationPdf('123e4567-e89b-12d3-a456-426614174000')
+
+    expect(getSpy).toHaveBeenCalledWith('/quotations/123e4567-e89b-12d3-a456-426614174000/pdf', {
+      responseType: 'blob',
+    })
+    expect(result).toBe(mockBlob)
+  })
 })
 

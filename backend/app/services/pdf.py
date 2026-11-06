@@ -9,6 +9,7 @@ accurate Decimal-based financial summaries, lifecycle status, and pagination.
 from datetime import datetime, timezone
 from decimal import Decimal
 import io
+import os
 from typing import Any
 
 from reportlab.lib import colors
@@ -17,6 +18,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfgen import canvas
 from reportlab.platypus import (
     HRFlowable,
+    Image as RLImage,
     KeepTogether,
     Paragraph,
     SimpleDocTemplate,
@@ -35,7 +37,12 @@ class NumberedCanvas(canvas.Canvas):
     and draws professional running headers and footers on every page.
     """
 
+    business_name: str = settings.business_name
+    business_email: str = settings.business_email
+    business_phone: str = settings.business_phone
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("pageCompression", 0)
         super().__init__(*args, **kwargs)
         self._saved_page_states: list[dict[str, Any]] = []
 
@@ -67,9 +74,9 @@ class NumberedCanvas(canvas.Canvas):
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor("#64748b"))
 
-        left_text = f"{settings.business_name} • {settings.business_email}"
-        if settings.business_phone:
-            left_text += f" • {settings.business_phone}"
+        left_text = f"{self.business_name} • {self.business_email}"
+        if self.business_phone:
+            left_text += f" • {self.business_phone}"
         self.drawString(36, 26, left_text)
 
         right_text = f"Page {self._pageNumber} of {total_pages}"
@@ -112,11 +119,58 @@ def _get_status_color(status_val: str) -> colors.HexColor:
     return colors.HexColor(mapping.get(status_val.lower(), "#64748b"))
 
 
-def generate_quotation_pdf(quotation: Quotation) -> bytes:
+def generate_quotation_pdf(
+    quotation: Quotation,
+    business_profile: Any = None,
+) -> bytes:
     """
     Generate print-ready PDF bytes for the given quotation model.
+    Uses custom business_profile if provided, otherwise falls back gracefully
+    to application settings.
     """
     buffer = io.BytesIO()
+
+    # Resolve business information with graceful fallback
+    b_name = (
+        business_profile.business_name
+        if business_profile and getattr(business_profile, "business_name", None)
+        else None
+    ) or settings.business_name
+    b_email = (
+        business_profile.email
+        if business_profile and getattr(business_profile, "email", None)
+        else None
+    ) or settings.business_email
+    b_phone = (
+        business_profile.phone
+        if business_profile and getattr(business_profile, "phone", None)
+        else None
+    ) or settings.business_phone
+    b_address = (
+        business_profile.address
+        if business_profile and getattr(business_profile, "address", None)
+        else None
+    ) or settings.business_address
+    b_website = (
+        business_profile.website
+        if business_profile and getattr(business_profile, "website", None)
+        else None
+    ) or settings.business_website
+    b_contact = (
+        business_profile.contact_person
+        if business_profile and getattr(business_profile, "contact_person", None)
+        else None
+    )
+    b_tax_id = (
+        business_profile.tax_id
+        if business_profile and getattr(business_profile, "tax_id", None)
+        else None
+    )
+    b_logo_url = (
+        business_profile.logo_url
+        if business_profile and getattr(business_profile, "logo_url", None)
+        else None
+    )
 
     doc = SimpleDocTemplate(
         buffer,
@@ -126,6 +180,7 @@ def generate_quotation_pdf(quotation: Quotation) -> bytes:
         topMargin=46,
         bottomMargin=54,
     )
+    doc.pageCompression = 0
 
     base_styles = getSampleStyleSheet()
 
@@ -290,16 +345,36 @@ def generate_quotation_pdf(quotation: Quotation) -> bytes:
     story: list[Any] = []
 
     # ── 1. Header: Business Info (Left) & Document Title/Number (Right) ───────
-    company_lines = [
-        Paragraph(settings.business_name, styles["CompanyTitle"]),
-        Spacer(1, 3),
-        Paragraph(settings.business_address, styles["CompanyMeta"]),
-        Paragraph(
-            f"Email: {settings.business_email}  •  Phone: {settings.business_phone}",
-            styles["CompanyMeta"],
-        ),
-        Paragraph(f"Web: {settings.business_website}", styles["CompanyMeta"]),
-    ]
+    company_lines: list[Any] = []
+
+    # Optional business logo
+    if b_logo_url:
+        try:
+            if os.path.isfile(b_logo_url):
+                company_lines.append(RLImage(b_logo_url, width=120, height=45))
+                company_lines.append(Spacer(1, 3))
+        except Exception:
+            pass
+
+    company_lines.append(Paragraph(b_name, styles["CompanyTitle"]))
+    company_lines.append(Spacer(1, 2))
+    if b_contact:
+        company_lines.append(Paragraph(f"Attn: {b_contact}", styles["CompanyMeta"]))
+    if b_address:
+        company_lines.append(Paragraph(b_address, styles["CompanyMeta"]))
+
+    contact_parts: list[str] = []
+    if b_email:
+        contact_parts.append(f"Email: {b_email}")
+    if b_phone:
+        contact_parts.append(f"Phone: {b_phone}")
+    if contact_parts:
+        company_lines.append(Paragraph("  •  ".join(contact_parts), styles["CompanyMeta"]))
+
+    if b_website:
+        company_lines.append(Paragraph(f"Web: {b_website}", styles["CompanyMeta"]))
+    if b_tax_id:
+        company_lines.append(Paragraph(f"Tax / VAT ID: {b_tax_id}", styles["CompanyMeta"]))
 
     created_date = quotation.created_at or datetime.now(timezone.utc)
     issue_date_str = created_date.strftime("%B %d, %Y")
@@ -556,8 +631,14 @@ def generate_quotation_pdf(quotation: Quotation) -> bytes:
         )
         story.append(KeepTogether(callout_table))
 
-    # Build the document with our NumberedCanvas
-    doc.build(story, canvasmaker=NumberedCanvas)
+    # Dynamic canvas with business footer details
+    class QuotationCanvas(NumberedCanvas):
+        business_name = b_name
+        business_email = b_email
+        business_phone = b_phone
+
+    # Build the document with our QuotationCanvas
+    doc.build(story, canvasmaker=QuotationCanvas)
 
     pdf_bytes = buffer.getvalue()
     buffer.close()

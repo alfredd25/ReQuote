@@ -267,7 +267,15 @@ async def download_quotation_pdf(
             detail=f"Quotation with ID '{quotation_id}' not found.",
         )
 
-    pdf_bytes = generate_quotation_pdf(quotation)
+    # Retrieve user's configured business profile if available
+    from app.models.business_profile import BusinessProfile
+
+    profile_res = await db.execute(
+        select(BusinessProfile).where(BusinessProfile.user_id == current_user.id)
+    )
+    business_profile = profile_res.scalar_one_or_none()
+
+    pdf_bytes = generate_quotation_pdf(quotation, business_profile=business_profile)
     filename = f"quotation-{quotation.quotation_number}.pdf"
 
     return Response(

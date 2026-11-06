@@ -40,6 +40,12 @@ export const Navbar: FC = () => {
           >
             Quotations
           </NavLink>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          >
+            Settings
+          </NavLink>
         </nav>
       </div>
 
