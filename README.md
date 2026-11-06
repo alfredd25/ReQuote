@@ -187,5 +187,7 @@ curl -X GET http://localhost:8000/quotations \
   - [x] Step 1: Frontend signup, login, React AuthContext, and token management
   - [x] Step 2: Protected routes, public routes, session restoration, and authenticated dashboard layout
 - [ ] Phase 6: Frontend Quotation Workspace & Management UI
+  - [x] Step 1: Quotation dashboard metrics, listing with search/filter/pagination, and dynamic creation form
+  - [ ] Step 2: Quotation detail, editing, deletion, and status lifecycle management
 - [ ] Phase 7: AI-assisted quote generation
 - [ ] Phase 8: CI/CD pipeline
