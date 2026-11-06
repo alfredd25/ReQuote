@@ -8,7 +8,16 @@ import { getStoredToken, removeStoredToken } from '../utils/tokenStorage'
 
 // Base URL defaults to '/api' (proxied by Vite dev server or Nginx in container)
 // or can be overridden via VITE_API_URL environment variable.
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+const getBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_URL
+  if (!envUrl || envUrl.trim() === '') {
+    return '/api'
+  }
+  const trimmed = envUrl.trim()
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+}
+
+const API_BASE_URL = getBaseUrl()
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

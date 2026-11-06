@@ -6,6 +6,7 @@ Alembic driver : psycopg2 (postgresql+psycopg2://) – configured in alembic/env
 """
 
 from collections.abc import AsyncGenerator
+import re
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -15,19 +16,58 @@ from sqlalchemy.ext.asyncio import (
 
 from app.config import settings
 
-# Convert the plain postgresql:// URL to the asyncpg variant when needed.
-# Supports DATABASE_URL written as either scheme.
-_db_url = settings.database_url
-if _db_url.startswith("postgresql://"):
-    _db_url = _db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-elif _db_url.startswith("postgresql+psycopg2://"):
-    _db_url = _db_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
 
-engine = create_async_engine(
-    _db_url,
-    echo=settings.debug,
-    pool_pre_ping=True,
-)
+def get_async_database_url(url: str) -> str:
+    """
+    Ensure the database URL uses the asyncpg driver and compatible query parameters.
+    Supports Neon, Supabase, Render, Docker Compose, and local Postgres.
+    """
+    # Standardize scheme
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql+psycopg2://"):
+        url = url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+
+    # Asyncpg expects ssl= rather than sslmode=
+    if "sslmode=" in url:
+        url = url.replace("sslmode=", "ssl=")
+
+    return url
+
+
+def get_sync_database_url(url: str) -> str:
+    """
+    Convert any postgresql:// variant to a psycopg2 URL for Alembic migrations.
+    Ensures compatibility with Neon, Supabase, and cloud PostgreSQL providers.
+    """
+    url = re.sub(r"^postgres://", "postgresql+psycopg2://", url)
+    url = re.sub(r"^postgresql\+asyncpg://", "postgresql+psycopg2://", url)
+    url = re.sub(r"^postgresql://", "postgresql+psycopg2://", url)
+    if "ssl=" in url and "sslmode=" not in url:
+        url = url.replace("ssl=", "sslmode=")
+    return url
+
+
+_db_url = get_async_database_url(settings.database_url)
+
+# Configure engine options based on dialect
+engine_kwargs: dict = {
+    "echo": settings.debug,
+    "pool_pre_ping": True,
+}
+
+if not _db_url.startswith("sqlite"):
+    engine_kwargs.update(
+        {
+            "pool_size": 10,
+            "max_overflow": 20,
+            "pool_recycle": 1800,
+        }
+    )
+
+engine = create_async_engine(_db_url, **engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
@@ -45,3 +85,4 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
         except Exception:
             await session.rollback()
             raise
+

@@ -38,11 +38,12 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+from app.database import get_sync_database_url
+
+
 def _sync_url(url: str) -> str:
     """Convert any postgresql:// variant to a psycopg2 URL for Alembic."""
-    url = re.sub(r"^postgresql\+asyncpg://", "postgresql+psycopg2://", url)
-    url = re.sub(r"^postgresql://", "postgresql+psycopg2://", url)
-    return url
+    return get_sync_database_url(url)
 
 
 def _get_url() -> str:
