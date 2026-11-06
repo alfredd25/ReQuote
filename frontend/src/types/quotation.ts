@@ -1,6 +1,7 @@
 /**
  * quotation.ts – TypeScript types for Quotations and Quotation Items.
- * Aligned with FastAPI Pydantic schemas in backend/app/schemas/quotation.py.
+ * Aligned with FastAPI Pydantic schemas in backend/app/schemas/quotation.py
+ * and SQLAlchemy model rules in backend/app/models/quotation.py.
  */
 
 export type QuotationStatus =
@@ -9,6 +10,16 @@ export type QuotationStatus =
   | 'accepted'
   | 'rejected'
   | 'expired'
+  | 'cancelled'
+
+export const VALID_STATUS_TRANSITIONS: Record<QuotationStatus, QuotationStatus[]> = {
+  draft: ['sent', 'cancelled'],
+  sent: ['accepted', 'rejected', 'expired', 'cancelled', 'draft'],
+  expired: ['draft', 'cancelled'],
+  rejected: ['draft', 'cancelled'],
+  accepted: [],
+  cancelled: [],
+}
 
 export interface QuotationItemCreate {
   description: string
@@ -47,6 +58,25 @@ export interface QuotationCreate {
   items: QuotationItemCreate[]
 }
 
+export interface QuotationUpdate {
+  title?: string | null
+  description?: string | null
+  customer_name?: string | null
+  customer_email?: string | null
+  customer_phone?: string | null
+  customer_company?: string | null
+  customer_address?: string | null
+  currency?: string | null
+  tax_rate?: number | string | null
+  notes?: string | null
+  terms_and_conditions?: string | null
+  items?: QuotationItemCreate[] | null
+}
+
+export interface QuotationStatusUpdate {
+  status: QuotationStatus
+}
+
 export interface QuotationResponse {
   id: string
   user_id: string
@@ -78,4 +108,3 @@ export interface QuotationListResponse {
   page_size: number
   total_pages: number
 }
-

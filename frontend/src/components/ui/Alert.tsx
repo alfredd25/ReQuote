@@ -1,4 +1,4 @@
-import { FC, ReactNode } from 'react'
+import { FC, ReactNode, CSSProperties } from 'react'
 import './ui.css'
 
 export interface AlertProps {
@@ -6,6 +6,7 @@ export interface AlertProps {
   title?: string
   children: ReactNode
   className?: string
+  style?: CSSProperties
   onClose?: () => void
 }
 
@@ -14,6 +15,7 @@ export const Alert: FC<AlertProps> = ({
   title,
   children,
   className = '',
+  style,
   onClose,
 }) => {
   const icons: Record<string, string> = {
@@ -27,6 +29,7 @@ export const Alert: FC<AlertProps> = ({
     <div
       role={variant === 'error' ? 'alert' : 'status'}
       className={`alert alert-${variant} ${className}`}
+      style={style}
     >
       <div className="alert-content">
         <span className="alert-icon" aria-hidden="true">

@@ -7,6 +7,8 @@ import {
   QuotationCreate,
   QuotationListResponse,
   QuotationResponse,
+  QuotationStatus,
+  QuotationUpdate,
 } from '../types/quotation'
 
 export const quotationsApi = {
@@ -42,5 +44,40 @@ export const quotationsApi = {
     const response = await apiClient.get<QuotationResponse>(`/quotations/${id}`)
     return response.data
   },
-}
 
+  /**
+   * Update an existing quotation and replace its line items.
+   * Calculations are recalculated server-side with Decimal arithmetic.
+   */
+  async updateQuotation(
+    id: string,
+    payload: QuotationUpdate
+  ): Promise<QuotationResponse> {
+    const response = await apiClient.put<QuotationResponse>(
+      `/quotations/${id}`,
+      payload
+    )
+    return response.data
+  },
+
+  /**
+   * Delete a quotation and its line items.
+   */
+  async deleteQuotation(id: string): Promise<void> {
+    await apiClient.delete(`/quotations/${id}`)
+  },
+
+  /**
+   * Transition quotation to a new lifecycle status.
+   */
+  async updateQuotationStatus(
+    id: string,
+    status: QuotationStatus
+  ): Promise<QuotationResponse> {
+    const response = await apiClient.patch<QuotationResponse>(
+      `/quotations/${id}/status`,
+      { status }
+    )
+    return response.data
+  },
+}

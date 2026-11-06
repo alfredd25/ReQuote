@@ -8,6 +8,8 @@ import { SignupPage } from './pages/SignupPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { QuotationListPage } from './pages/QuotationListPage'
 import { CreateQuotationPage } from './pages/CreateQuotationPage'
+import { QuotationDetailPage } from './pages/QuotationDetailPage'
+import { EditQuotationPage } from './pages/EditQuotationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import './App.css'
 
@@ -29,6 +31,8 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/quotations" element={<QuotationListPage />} />
           <Route path="/quotations/new" element={<CreateQuotationPage />} />
+          <Route path="/quotations/:id" element={<QuotationDetailPage />} />
+          <Route path="/quotations/:id/edit" element={<EditQuotationPage />} />
         </Route>
       </Route>
 

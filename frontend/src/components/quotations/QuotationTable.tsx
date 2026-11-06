@@ -111,6 +111,7 @@ export const QuotationTable: FC<QuotationTableProps> = ({
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
             <option value="expired">Expired</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
       </div>
@@ -126,12 +127,13 @@ export const QuotationTable: FC<QuotationTableProps> = ({
               <th>Created</th>
               <th>Total</th>
               <th>Status</th>
+              <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '3rem 1rem' }}>
                   <span className="spinner" style={{ width: '1.75rem', height: '1.75rem', borderWidth: '3px' }} />
                   <p style={{ marginTop: '0.75rem', color: 'var(--text-secondary)' }}>
                     Loading quotations…
@@ -140,7 +142,7 @@ export const QuotationTable: FC<QuotationTableProps> = ({
               </tr>
             ) : filteredQuotations.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
                   <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📄</div>
                   <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                     {emptyMessage}
@@ -161,10 +163,20 @@ export const QuotationTable: FC<QuotationTableProps> = ({
               filteredQuotations.map((quote) => (
                 <tr key={quote.id}>
                   <td>
-                    <span className="quote-number">{quote.quotation_number}</span>
+                    <Link
+                      to={`/quotations/${quote.id}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <span className="quote-number">{quote.quotation_number}</span>
+                    </Link>
                   </td>
                   <td>
-                    <div className="quote-title">{quote.title}</div>
+                    <Link
+                      to={`/quotations/${quote.id}`}
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <div className="quote-title">{quote.title}</div>
+                    </Link>
                     {quote.description && (
                       <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
                         {quote.description.length > 50
@@ -191,6 +203,13 @@ export const QuotationTable: FC<QuotationTableProps> = ({
                   </td>
                   <td>
                     <StatusBadge status={quote.status} />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <Link to={`/quotations/${quote.id}`}>
+                      <Button variant="secondary" size="sm">
+                        View
+                      </Button>
+                    </Link>
                   </td>
                 </tr>
               ))

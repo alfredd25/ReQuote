@@ -44,6 +44,23 @@ export function formatDate(dateString: string | null | undefined): string {
   }
 }
 
+export function formatDateTime(dateString: string | null | undefined): string {
+  if (!dateString) return '—'
+  try {
+    const d = new Date(dateString)
+    if (isNaN(d.getTime())) return '—'
+    return d.toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return '—'
+  }
+}
+
 export interface StatusMeta {
   label: string
   color: string
@@ -88,6 +105,13 @@ export function getStatusMeta(status: QuotationStatus): StatusMeta {
         bg: 'rgba(234, 179, 8, 0.15)',
         border: 'rgba(234, 179, 8, 0.3)',
       }
+    case 'cancelled':
+      return {
+        label: 'Cancelled',
+        color: '#94a3b8',
+        bg: 'rgba(148, 163, 184, 0.1)',
+        border: 'rgba(148, 163, 184, 0.2)',
+      }
     default:
       return {
         label: status,
@@ -97,4 +121,3 @@ export function getStatusMeta(status: QuotationStatus): StatusMeta {
       }
   }
 }
-

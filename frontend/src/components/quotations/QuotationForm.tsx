@@ -1,8 +1,13 @@
-import { FC, useState, FormEvent } from 'react'
+import { FC, useState, FormEvent, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { quotationsApi } from '../../api/quotations'
 import { extractErrorMessage } from '../../api/client'
-import { QuotationCreate, QuotationItemCreate, QuotationResponse } from '../../types/quotation'
+import {
+  QuotationCreate,
+  QuotationItemCreate,
+  QuotationResponse,
+  QuotationUpdate,
+} from '../../types/quotation'
 import { formatCurrency } from '../../utils/formatters'
 import { Input } from '../ui/Input'
 import { Button } from '../ui/Button'
@@ -11,6 +16,7 @@ import { Card } from '../ui/Card'
 import './quotations.css'
 
 export interface QuotationFormProps {
+  initialData?: QuotationResponse
   onSuccess?: (quote: QuotationResponse) => void
 }
 
@@ -24,42 +30,105 @@ interface FormLineItem {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
+export const QuotationForm: FC<QuotationFormProps> = ({
+  initialData,
+  onSuccess,
+}) => {
   const navigate = useNavigate()
+  const isEditing = Boolean(initialData)
 
   // Header state
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [quotationNumber, setQuotationNumber] = useState('')
-  const [currency, setCurrency] = useState('USD')
-  const [taxRatePercent, setTaxRatePercent] = useState('0')
+  const [title, setTitle] = useState(initialData?.title || '')
+  const [description, setDescription] = useState(initialData?.description || '')
+  const [quotationNumber, setQuotationNumber] = useState(
+    initialData?.quotation_number || ''
+  )
+  const [currency, setCurrency] = useState(initialData?.currency || 'USD')
+  const [taxRatePercent, setTaxRatePercent] = useState(
+    initialData
+      ? (parseFloat(initialData.tax_rate) * 100).toString()
+      : '0'
+  )
 
   // Customer state
-  const [customerName, setCustomerName] = useState('')
-  const [customerEmail, setCustomerEmail] = useState('')
-  const [customerCompany, setCustomerCompany] = useState('')
-  const [customerPhone, setCustomerPhone] = useState('')
-  const [customerAddress, setCustomerAddress] = useState('')
+  const [customerName, setCustomerName] = useState(
+    initialData?.customer_name || ''
+  )
+  const [customerEmail, setCustomerEmail] = useState(
+    initialData?.customer_email || ''
+  )
+  const [customerCompany, setCustomerCompany] = useState(
+    initialData?.customer_company || ''
+  )
+  const [customerPhone, setCustomerPhone] = useState(
+    initialData?.customer_phone || ''
+  )
+  const [customerAddress, setCustomerAddress] = useState(
+    initialData?.customer_address || ''
+  )
 
   // Notes & terms
-  const [notes, setNotes] = useState('')
-  const [terms, setTerms] = useState('')
+  const [notes, setNotes] = useState(initialData?.notes || '')
+  const [terms, setTerms] = useState(initialData?.terms_and_conditions || '')
 
-  // Line items state (start with 1 empty line item)
-  const [items, setItems] = useState<FormLineItem[]>([
-    {
-      id: 'item-1',
-      description: '',
-      unit: '',
-      quantity: '1',
-      unit_price: '0.00',
-    },
-  ])
+  // Line items state
+  const [items, setItems] = useState<FormLineItem[]>(() => {
+    if (initialData?.items && initialData.items.length > 0) {
+      return initialData.items.map((it) => ({
+        id: it.id,
+        description: it.description,
+        unit: it.unit || '',
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+      }))
+    }
+    return [
+      {
+        id: 'item-1',
+        description: '',
+        unit: '',
+        quantity: '1',
+        unit_price: '0.00',
+      },
+    ]
+  })
+
+  // Sync state if initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title)
+      setDescription(initialData.description || '')
+      setQuotationNumber(initialData.quotation_number)
+      setCurrency(initialData.currency)
+      setTaxRatePercent((parseFloat(initialData.tax_rate) * 100).toString())
+      setCustomerName(initialData.customer_name)
+      setCustomerEmail(initialData.customer_email || '')
+      setCustomerCompany(initialData.customer_company || '')
+      setCustomerPhone(initialData.customer_phone || '')
+      setCustomerAddress(initialData.customer_address || '')
+      setNotes(initialData.notes || '')
+      setTerms(initialData.terms_and_conditions || '')
+      if (initialData.items && initialData.items.length > 0) {
+        setItems(
+          initialData.items.map((it) => ({
+            id: it.id,
+            description: it.description,
+            unit: it.unit || '',
+            quantity: it.quantity,
+            unit_price: it.unit_price,
+          }))
+        )
+      }
+    }
+  }, [initialData])
 
   // UI state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [apiError, setApiError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const isTerminal =
+    initialData?.status === 'accepted' || initialData?.status === 'cancelled'
 
   // Dynamic line item actions
   const handleAddItem = () => {
@@ -147,13 +216,19 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
     e.preventDefault()
     setApiError(null)
 
+    if (isTerminal) {
+      setApiError(
+        `Quotations in '${initialData?.status}' status cannot be edited.`
+      )
+      return
+    }
+
     if (!validate()) {
       return
     }
 
     setIsSubmitting(true)
 
-    // Build payload matching QuotationCreate schema
     const payloadItems: QuotationItemCreate[] = items.map((item, idx) => ({
       description: item.description.trim(),
       unit: item.unit.trim() || null,
@@ -162,31 +237,65 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
       position: idx + 1,
     }))
 
-    const payload: QuotationCreate = {
-      title: title.trim(),
-      description: description.trim() || null,
-      quotation_number: quotationNumber.trim() || null,
-      customer_name: customerName.trim(),
-      customer_email: customerEmail.trim() || null,
-      customer_phone: customerPhone.trim() || null,
-      customer_company: customerCompany.trim() || null,
-      customer_address: customerAddress.trim() || null,
-      currency: currency.trim().toUpperCase(),
-      tax_rate: (parseFloat(taxRatePercent) / 100).toFixed(4),
-      notes: notes.trim() || null,
-      terms_and_conditions: terms.trim() || null,
-      items: payloadItems,
-    }
-
     try {
-      const created = await quotationsApi.createQuotation(payload)
-      if (onSuccess) {
-        onSuccess(created)
+      if (isEditing && initialData) {
+        // Edit mode -> update existing quotation
+        const updatePayload: QuotationUpdate = {
+          title: title.trim(),
+          description: description.trim() || null,
+          customer_name: customerName.trim(),
+          customer_email: customerEmail.trim() || null,
+          customer_phone: customerPhone.trim() || null,
+          customer_company: customerCompany.trim() || null,
+          customer_address: customerAddress.trim() || null,
+          currency: currency.trim().toUpperCase(),
+          tax_rate: (parseFloat(taxRatePercent) / 100).toFixed(4),
+          notes: notes.trim() || null,
+          terms_and_conditions: terms.trim() || null,
+          items: payloadItems,
+        }
+
+        const updated = await quotationsApi.updateQuotation(
+          initialData.id,
+          updatePayload
+        )
+        if (onSuccess) {
+          onSuccess(updated)
+        } else {
+          navigate(`/quotations/${initialData.id}`)
+        }
       } else {
-        navigate('/quotations')
+        // Create mode -> create new quotation
+        const createPayload: QuotationCreate = {
+          title: title.trim(),
+          description: description.trim() || null,
+          quotation_number: quotationNumber.trim() || null,
+          customer_name: customerName.trim(),
+          customer_email: customerEmail.trim() || null,
+          customer_phone: customerPhone.trim() || null,
+          customer_company: customerCompany.trim() || null,
+          customer_address: customerAddress.trim() || null,
+          currency: currency.trim().toUpperCase(),
+          tax_rate: (parseFloat(taxRatePercent) / 100).toFixed(4),
+          notes: notes.trim() || null,
+          terms_and_conditions: terms.trim() || null,
+          items: payloadItems,
+        }
+
+        const created = await quotationsApi.createQuotation(createPayload)
+        if (onSuccess) {
+          onSuccess(created)
+        } else {
+          navigate(`/quotations/${created.id}`)
+        }
       }
     } catch (err) {
-      const message = extractErrorMessage(err, 'Failed to create quotation')
+      const message = extractErrorMessage(
+        err,
+        isEditing
+          ? 'Failed to update quotation'
+          : 'Failed to create quotation'
+      )
       setApiError(message)
     } finally {
       setIsSubmitting(false)
@@ -195,10 +304,20 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {isTerminal && (
+        <Alert
+          variant="warning"
+          title="Quotation Finalized"
+          style={{ marginBottom: '1.5rem' }}
+        >
+          This quotation is in <strong>{initialData?.status}</strong> status and is locked against modifications.
+        </Alert>
+      )}
+
       {apiError && (
         <Alert
           variant="error"
-          title="Could not create quotation"
+          title={isEditing ? 'Could not update quotation' : 'Could not create quotation'}
           onClose={() => setApiError(null)}
         >
           {apiError}
@@ -208,7 +327,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
       {/* Quotation Header & Project Details */}
       <Card elevated style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
-          Quotation Details
+          {isEditing ? 'Edit Quotation Details' : 'Quotation Details'}
         </h2>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
@@ -219,18 +338,18 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             error={fieldErrors.title}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
             required
           />
 
           <Input
-            label="Quotation Number (Optional)"
+            label="Quotation Number"
             id="quote-number"
-            placeholder="Auto-generated if left blank"
+            placeholder={isEditing ? quotationNumber : 'Auto-generated if left blank'}
             value={quotationNumber}
             onChange={(e) => setQuotationNumber(e.target.value)}
-            helperText="e.g. RQ-20261105-001"
-            disabled={isSubmitting}
+            helperText={isEditing ? 'Identifier cannot be modified' : 'e.g. RQ-20261105-001'}
+            disabled={isEditing || isSubmitting || isTerminal}
           />
         </div>
 
@@ -245,7 +364,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
               onChange={(e) => setCurrency(e.target.value)}
               className="filter-select"
               style={{ width: '100%', padding: '0.7rem' }}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isTerminal}
             >
               <option value="USD">USD ($)</option>
               <option value="EUR">EUR (€)</option>
@@ -266,7 +385,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             value={taxRatePercent}
             onChange={(e) => setTaxRatePercent(e.target.value)}
             error={fieldErrors.taxRate}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           />
         </div>
 
@@ -281,7 +400,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             placeholder="Optional project scope or background details…"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           />
         </div>
       </Card>
@@ -300,7 +419,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
             error={fieldErrors.customerName}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
             required
           />
 
@@ -312,7 +431,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             value={customerEmail}
             onChange={(e) => setCustomerEmail(e.target.value)}
             error={fieldErrors.customerEmail}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           />
         </div>
 
@@ -323,7 +442,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             placeholder="Acme Corp"
             value={customerCompany}
             onChange={(e) => setCustomerCompany(e.target.value)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           />
 
           <Input
@@ -332,7 +451,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             placeholder="+1 (555) 012-3456"
             value={customerPhone}
             onChange={(e) => setCustomerPhone(e.target.value)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           />
         </div>
 
@@ -347,7 +466,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             placeholder="123 Business St, Suite 400, City, Country"
             value={customerAddress}
             onChange={(e) => setCustomerAddress(e.target.value)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           />
         </div>
       </Card>
@@ -368,7 +487,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
             variant="secondary"
             size="sm"
             onClick={handleAddItem}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isTerminal}
           >
             + Add Line Item
           </Button>
@@ -393,7 +512,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
                   value={item.description}
                   onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
                   error={fieldErrors[`item_${index}_desc`]}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isTerminal}
                   required
                 />
 
@@ -406,7 +525,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
                   value={item.quantity}
                   onChange={(e) => handleItemChange(item.id, 'quantity', e.target.value)}
                   error={fieldErrors[`item_${index}_qty`]}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isTerminal}
                   required
                 />
 
@@ -416,7 +535,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
                   placeholder="hrs, pcs"
                   value={item.unit}
                   onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isTerminal}
                 />
 
                 <Input
@@ -428,7 +547,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
                   value={item.unit_price}
                   onChange={(e) => handleItemChange(item.id, 'unit_price', e.target.value)}
                   error={fieldErrors[`item_${index}_price`]}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isTerminal}
                   required
                 />
 
@@ -437,7 +556,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
                   <span>{formatCurrency(lineTotal, currency)}</span>
                 </div>
 
-                {items.length > 1 && (
+                {items.length > 1 && !isTerminal && (
                   <button
                     type="button"
                     aria-label={`Remove item #${index + 1}`}
@@ -496,7 +615,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
               placeholder="e.g. Thanks for your business! Estimated turnaround is 2 weeks."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isTerminal}
             />
           </div>
 
@@ -511,7 +630,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
               placeholder="e.g. Payment due within 30 days of acceptance. 50% upfront deposit."
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isTerminal}
             />
           </div>
         </div>
@@ -523,7 +642,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
           type="button"
           variant="secondary"
           size="lg"
-          onClick={() => navigate('/quotations')}
+          onClick={() =>
+            isEditing && initialData
+              ? navigate(`/quotations/${initialData.id}`)
+              : navigate('/quotations')
+          }
           disabled={isSubmitting}
         >
           Cancel
@@ -534,11 +657,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({ onSuccess }) => {
           variant="primary"
           size="lg"
           isLoading={isSubmitting}
+          disabled={isTerminal}
         >
-          Save &amp; Create Quotation
+          {isEditing ? 'Save Changes' : 'Save & Create Quotation'}
         </Button>
       </div>
     </form>
   )
 }
-
