@@ -7,6 +7,7 @@ Alembic driver : psycopg2 (postgresql+psycopg2://) – configured in alembic/env
 
 from collections.abc import AsyncGenerator
 import re
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -21,6 +22,11 @@ def get_async_database_url(url: str) -> str:
     """
     Ensure the database URL uses the asyncpg driver and compatible query parameters.
     Supports Neon, Supabase, Render, Docker Compose, and local Postgres.
+
+    asyncpg-specific adjustments applied here (not to the original URL):
+    - Scheme is converted to postgresql+asyncpg://
+    - sslmode= is renamed to ssl= (asyncpg parameter name)
+    - channel_binding= is removed (unsupported by asyncpg; causes TypeError on connect)
     """
     # Standardize scheme
     if url.startswith("postgres://"):
@@ -30,9 +36,19 @@ def get_async_database_url(url: str) -> str:
     elif url.startswith("postgresql+psycopg2://"):
         url = url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
 
-    # Asyncpg expects ssl= rather than sslmode=
-    if "sslmode=" in url:
-        url = url.replace("sslmode=", "ssl=")
+    # Parse and clean query string
+    parsed = urlparse(url)
+    params = parse_qs(parsed.query, keep_blank_values=True)
+
+    # sslmode → ssl  (asyncpg uses ssl= not sslmode=)
+    if "sslmode" in params:
+        params["ssl"] = params.pop("sslmode")
+
+    # Remove channel_binding — asyncpg does not accept it and raises TypeError
+    params.pop("channel_binding", None)
+
+    cleaned_query = urlencode({k: v[0] for k, v in params.items()})
+    url = urlunparse(parsed._replace(query=cleaned_query))
 
     return url
 

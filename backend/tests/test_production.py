@@ -116,6 +116,21 @@ def test_database_url_conversion():
     url2 = get_async_database_url("postgresql://user:pass@db:5432/requote")
     assert url2.startswith("postgresql+asyncpg://")
 
+    # channel_binding is stripped for asyncpg; ssl is preserved
+    url3 = get_async_database_url(
+        "postgres://user:pass@host.neon.tech/db?sslmode=require&channel_binding=require"
+    )
+    assert "channel_binding" not in url3
+    assert "ssl=require" in url3
+
+    # channel_binding must NOT be stripped from the sync/psycopg2 URL
+    sync_url = get_sync_database_url(
+        "postgres://user:pass@host.neon.tech/db?sslmode=require&channel_binding=require"
+    )
+    assert sync_url.startswith("postgresql+psycopg2://")
+    assert "channel_binding=require" in sync_url
+    assert "sslmode=require" in sync_url
+
     # Alembic sync url converter
     sync1 = get_sync_database_url("postgres://user:pass@host:5432/db?ssl=require")
     assert sync1.startswith("postgresql+psycopg2://")
