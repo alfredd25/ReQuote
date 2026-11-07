@@ -61,8 +61,8 @@ engine_kwargs: dict = {
 if not _db_url.startswith("sqlite"):
     engine_kwargs.update(
         {
-            "pool_size": 10,
-            "max_overflow": 20,
+            "pool_size": 3,
+            "max_overflow": 2,
             "pool_recycle": 1800,
         }
     )

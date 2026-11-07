@@ -47,8 +47,15 @@ def _sync_url(url: str) -> str:
 
 
 def _get_url() -> str:
-    """Read DATABASE_URL from the environment, falling back to alembic.ini."""
-    raw = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url", "")
+    """Read MIGRATION_DATABASE_URL (preferred) or DATABASE_URL from the environment,
+    falling back to alembic.ini. Using a dedicated MIGRATION_DATABASE_URL allows
+    production deployments to use a direct (non-pooled) connection string for
+    migrations while keeping DATABASE_URL pointed at a connection pooler."""
+    raw = (
+        os.environ.get("MIGRATION_DATABASE_URL")
+        or os.environ.get("DATABASE_URL")
+        or config.get_main_option("sqlalchemy.url", "")
+    )
     if not raw:
         raise RuntimeError(
             "DATABASE_URL is not set. "
