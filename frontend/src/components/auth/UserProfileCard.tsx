@@ -58,7 +58,7 @@ export const UserProfileCard: FC = () => {
       </div>
 
       <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-        You are authenticated. Quotations created in subsequent phases will automatically link to your account.
+        Your account is active. All quotations and PDF documents you generate are securely isolated and linked to your business account.
       </p>
     </Card>
   )

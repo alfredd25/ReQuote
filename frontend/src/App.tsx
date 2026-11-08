@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ProtectedRoute } from './components/routes/ProtectedRoute'
 import { PublicRoute } from './components/routes/PublicRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
+import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 import { SignupPage } from './pages/SignupPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -17,8 +18,8 @@ import './App.css'
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Homepage */}
+      <Route path="/" element={<HomePage />} />
 
       {/* Public routes (authenticated users redirected to dashboard) */}
       <Route element={<PublicRoute />}>

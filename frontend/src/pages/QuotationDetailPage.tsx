@@ -169,8 +169,8 @@ export const QuotationDetailPage: FC = () => {
           ← Back to Quotations
         </Link>
 
-        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-          Owner ID: <code style={{ color: 'var(--accent-light)' }}>{quotation.user_id}</code>
+        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+          Created {formatDateTime(quotation.created_at)}
         </div>
       </div>
 
