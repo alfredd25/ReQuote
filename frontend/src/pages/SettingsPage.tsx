@@ -195,7 +195,6 @@ export const SettingsPage: FC = () => {
           {/* Card 1: Company Profile & Identity */}
           <Card>
             <div className="card-header">
-              <div className="status-icon">🏢</div>
               <h2>Company Identity</h2>
             </div>
 
@@ -239,7 +238,6 @@ export const SettingsPage: FC = () => {
           {/* Card 2: Contact Information */}
           <Card>
             <div className="card-header">
-              <div className="status-icon">📍</div>
               <h2>Contact Information</h2>
             </div>
 
@@ -292,7 +290,6 @@ export const SettingsPage: FC = () => {
         {/* Card 3: Quotation Defaults */}
         <Card style={{ marginBottom: '1.75rem' }}>
           <div className="card-header">
-            <div className="status-icon">⚙️</div>
             <h2>Quotation Defaults</h2>
           </div>
 
@@ -352,7 +349,6 @@ export const SettingsPage: FC = () => {
         {/* Live Preview Card */}
         <Card style={{ marginBottom: '2rem', border: '1px solid var(--accent-light)', background: 'rgba(99, 102, 241, 0.03)' }}>
           <div className="card-header">
-            <div className="status-icon">👁️</div>
             <h2>PDF Header Preview</h2>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', padding: '0.75rem 0' }}>

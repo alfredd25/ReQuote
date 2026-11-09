@@ -68,7 +68,12 @@ export const EditQuotationPage: FC = () => {
   if (isNotFound) {
     return (
       <Card style={{ textAlign: 'center', padding: '3.5rem 1.5rem', maxWidth: '580px', margin: '2rem auto' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
+        <div style={{ marginBottom: '1rem', opacity: 0.5 }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </div>
         <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
           Quotation Not Found
         </h2>

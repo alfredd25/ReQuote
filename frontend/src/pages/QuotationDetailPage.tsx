@@ -119,7 +119,12 @@ export const QuotationDetailPage: FC = () => {
   if (isNotFound) {
     return (
       <Card style={{ textAlign: 'center', padding: '3.5rem 1.5rem', maxWidth: '580px', margin: '2rem auto' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
+        <div style={{ marginBottom: '1rem', opacity: 0.5 }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </div>
         <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
           Quotation Not Found
         </h2>
@@ -214,7 +219,7 @@ export const QuotationDetailPage: FC = () => {
             isLoading={isDownloadingPdf}
             title="Download printable PDF quotation"
           >
-            📄 Download PDF
+            Download PDF
           </Button>
 
           <Button
@@ -234,7 +239,7 @@ export const QuotationDetailPage: FC = () => {
               disabled={isTerminal}
               title={isTerminal ? `Cannot edit quotes in '${quotation.status}' status` : 'Edit quotation'}
             >
-              ✏️ Edit Quote
+              Edit Quote
             </Button>
           </Link>
 
@@ -244,7 +249,7 @@ export const QuotationDetailPage: FC = () => {
             size="md"
             onClick={() => setIsDeleteModalOpen(true)}
           >
-            🗑️ Delete
+            Delete
           </Button>
         </div>
       </div>
@@ -254,7 +259,6 @@ export const QuotationDetailPage: FC = () => {
         {/* Customer Information */}
         <Card>
           <div className="card-header">
-            <div className="status-icon">👤</div>
             <h2>Customer Details</h2>
           </div>
           <div className="status-grid">
@@ -294,7 +298,6 @@ export const QuotationDetailPage: FC = () => {
         {/* Quotation Metadata */}
         <Card>
           <div className="card-header">
-            <div className="status-icon">📋</div>
             <h2>Quotation Info</h2>
           </div>
           <div className="status-grid">

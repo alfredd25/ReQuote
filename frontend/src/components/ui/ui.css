@@ -22,37 +22,85 @@
   color: var(--red);
 }
 
-.form-input {
+.form-input,
+.form-textarea,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="tel"],
+input[type="search"],
+textarea,
+select {
   width: 100%;
   padding: 0.65rem 0.95rem;
   font-size: 0.92rem;
-  font-family: var(--font-sans);
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.03);
+  font-family: var(--font-sans) !important;
+  color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid var(--border);
   border-radius: 6px;
   outline: none;
+  box-sizing: border-box;
   transition: all 0.15s ease;
 }
 
-.form-input:focus {
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
-  background-color: rgba(255, 255, 255, 0.05);
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.55;
 }
 
-.form-input:disabled {
+.form-input:focus,
+.form-textarea:focus,
+textarea:focus,
+select:focus,
+input:focus {
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.form-input:disabled,
+.form-textarea:disabled,
+textarea:disabled,
+input:disabled,
+select:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-.form-input.input-error {
-  border-color: var(--red);
-  background-color: rgba(244, 63, 94, 0.06);
+.form-input.input-error,
+.form-textarea.input-error {
+  border-color: var(--red) !important;
+  background-color: rgba(244, 63, 94, 0.06) !important;
 }
 
-.form-input.input-error:focus {
-  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
+.form-input.input-error:focus,
+.form-textarea.input-error:focus {
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2) !important;
+}
+
+/* ── Webkit Dark Autofill Fix ──────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #12131a inset !important;
+  box-shadow: 0 0 0 1000px #12131a inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  font-family: var(--font-sans) !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .form-error {
@@ -61,9 +109,12 @@
   margin-top: 0.25rem;
 }
 
-.form-helper {
+.form-helper,
+.form-helper-text {
   font-size: 0.78rem;
   color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: block;
 }
 
 /* ── Buttons ──────────────────────────────────────────────── */

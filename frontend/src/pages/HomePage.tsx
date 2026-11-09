@@ -42,15 +42,6 @@ export const HomePage: FC = () => {
               <a href="#architecture" className="landing-nav-link">
                 Architecture <span className="nav-chevron">▾</span>
               </a>
-              <a href="#workflow" className="landing-nav-link">
-                Workflow
-              </a>
-              <a href="#docs" className="landing-nav-link">
-                Docs
-              </a>
-              <a href="#pricing" className="landing-nav-link">
-                Pricing
-              </a>
             </nav>
           </div>
 
@@ -105,13 +96,6 @@ export const HomePage: FC = () => {
             <a href="#architecture" className="hero-cta-dark">
               Explore Architecture
             </a>
-            <Link to={isAuthenticated ? '/quotations/new' : '/login'} className="hero-cta-ghost">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
-                <circle cx="12" cy="12" r="10" />
-                <polygon points="10 8 16 12 10 16 10 8" />
-              </svg>
-              View live demo
-            </Link>
           </div>
         </div>
 
@@ -121,7 +105,6 @@ export const HomePage: FC = () => {
           <div className="architecture-box">
             <div className="arch-top-bar">
               <div className="arch-breadcrumbs">
-                <span className="arch-dot-icon">❖</span>
                 <span className="arch-crumb-muted">Acme Global</span>
                 <span className="arch-sep">›</span>
                 <span className="arch-crumb-active">Production Quotation</span>
@@ -137,68 +120,100 @@ export const HomePage: FC = () => {
               <div className="arch-nodes-grid">
                 <div className="arch-node-card">
                   <div className="node-icon-title">
-                    <span className="node-icon">▤</span>
+                    <span className="node-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                      </svg>
+                    </span>
                     <div>
                       <div className="node-title">Client Scope</div>
                       <div className="node-sub">Acme Enterprises</div>
                     </div>
                   </div>
-                  <span className="node-badge live">✓ Live</span>
+                  <span className="node-badge live">Live</span>
                 </div>
 
                 <div className="arch-node-card active-node">
                   <div className="node-icon-title">
-                    <span className="node-icon">⚡</span>
+                    <span className="node-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                    </span>
                     <div>
                       <div className="node-title">Itemization API</div>
                       <div className="node-sub">Decimal Precision</div>
                     </div>
                   </div>
-                  <span className="node-badge deploying">⟳ Active</span>
+                  <span className="node-badge deploying">Active</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
-                    <span className="node-icon">📄</span>
+                    <span className="node-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                      </svg>
+                    </span>
                     <div>
                       <div className="node-title">PDF Engine</div>
                       <div className="node-sub">ReportLab Worker</div>
                     </div>
                   </div>
-                  <span className="node-badge live">✓ Live</span>
+                  <span className="node-badge live">Live</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
-                    <span className="node-icon">❖</span>
+                    <span className="node-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3" />
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                      </svg>
+                    </span>
                     <div>
                       <div className="node-title">Tax &amp; Currency</div>
                       <div className="node-sub">PostgreSQL 16</div>
                     </div>
                   </div>
-                  <span className="node-badge succeeded">✓ Succeeded</span>
+                  <span className="node-badge succeeded">Succeeded</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
-                    <span className="node-icon">🔒</span>
+                    <span className="node-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    </span>
                     <div>
                       <div className="node-title">Audit Trail</div>
                       <div className="node-sub">JWT Ownership</div>
                     </div>
                   </div>
-                  <span className="node-badge live">✓ Live</span>
+                  <span className="node-badge live">Live</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
-                    <span className="node-icon">⏱</span>
+                    <span className="node-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    </span>
                     <div>
                       <div className="node-title">Lifecycle State</div>
                       <div className="node-sub">Accepted Proposal</div>
                     </div>
                   </div>
-                  <span className="node-badge live">✓ Live</span>
+                  <span className="node-badge live">Live</span>
                 </div>
               </div>
 
@@ -210,8 +225,8 @@ export const HomePage: FC = () => {
                 </div>
                 <div className="terminal-body font-mono">
                   <div className="term-line prompt">&gt; requote generate --id RQ-2026-0819</div>
-                  <div className="term-line success">✔ Connected to PostgreSQL (Neon Pool) in 1.2ms</div>
-                  <div className="term-line info">✔ Loaded client profile: Acme Global Digital Inc.</div>
+                  <div className="term-line success">[ok] Connected to PostgreSQL (Neon Pool) in 1.2ms</div>
+                  <div className="term-line info">[ok] Loaded client profile: Acme Global Digital Inc.</div>
                   <div className="term-line dim">--------------------------------------------------</div>
                   <div className="term-line">[1] Cloud Migration Consulting: 40 hrs @ $175.00  = $7,000.00</div>
                   <div className="term-line">[2] High-Availability DB Setup: 1 system @ $4,500 = $4,500.00</div>
@@ -220,37 +235,10 @@ export const HomePage: FC = () => {
                   <div className="term-line highlight">Subtotal:       $14,500.00 USD</div>
                   <div className="term-line highlight">Tax (8.00%):     $1,160.00 USD</div>
                   <div className="term-line grand-total">Grand Total:    $15,660.00 USD [Decimal-exact]</div>
-                  <div className="term-line success">✔ PDF compiled: 2 pages, NumberedCanvas (14ms)</div>
-                  <div className="term-line accepted">✔ Status Transition: [sent] → [accepted] verified</div>
+                  <div className="term-line success">[ok] PDF compiled: 2 pages, NumberedCanvas (14ms)</div>
+                  <div className="term-line accepted">[ok] Status Transition: [sent] → [accepted] verified</div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Social Proof Strip ── */}
-      <section className="social-proof-strip">
-        <div className="social-proof-inner">
-          <span className="social-proof-label">
-            TRUSTED BY OVER 10,000+ FREELANCERS &amp; MODERN AGENCIES
-          </span>
-          <div className="stats-badges-row">
-            <div className="stat-pill">
-              <span className="stat-num">&lt; 30s</span>
-              <span className="stat-desc">Quote Creation</span>
-            </div>
-            <div className="stat-pill">
-              <span className="stat-num">100%</span>
-              <span className="stat-desc">Decimal Precision</span>
-            </div>
-            <div className="stat-pill">
-              <span className="stat-num">14ms</span>
-              <span className="stat-desc">PDF Generation</span>
-            </div>
-            <div className="stat-pill">
-              <span className="stat-num">99.9%</span>
-              <span className="stat-desc">Cloud Uptime</span>
             </div>
           </div>
         </div>
