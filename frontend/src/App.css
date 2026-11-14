@@ -86,6 +86,10 @@
   padding: 1.75rem;
   backdrop-filter: blur(16px);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .card:hover {
@@ -157,4 +161,73 @@
 
 .value.healthy {
   color: var(--green);
+}
+
+/* ── Quotation Actions Group ── */
+.quotation-actions-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* ── Mobile Responsive Rules (Mobile only — Laptop/PC dimensions untouched) ── */
+@media (max-width: 768px) {
+  .app {
+    padding: 0 1rem 3rem;
+  }
+
+  .card {
+    padding: 1.15rem 1rem;
+    border-radius: 10px;
+  }
+
+  .auth-page-container {
+    padding-top: 2rem;
+    width: 100%;
+  }
+
+  .auth-hero-title {
+    font-size: 1.45rem;
+  }
+
+  .status-item {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .quotation-actions-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .quotation-actions-group > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .quotation-actions-group button,
+  .quotation-actions-group a,
+  .quotation-actions-group a > button {
+    width: 100%;
+  }
+
+  .quotation-detail-header-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .quotation-actions-group {
+    grid-template-columns: 1fr;
+  }
 }

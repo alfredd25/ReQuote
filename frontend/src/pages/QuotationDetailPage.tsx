@@ -158,7 +158,7 @@ export const QuotationDetailPage: FC = () => {
   return (
     <>
       {/* Top Breadcrumb Navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div className="quotation-detail-header-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
         <Link
           to="/quotations"
           style={{
@@ -210,7 +210,7 @@ export const QuotationDetailPage: FC = () => {
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+        <div className="quotation-actions-group">
           <Button
             type="button"
             variant="primary"
@@ -287,7 +287,7 @@ export const QuotationDetailPage: FC = () => {
             {quotation.customer_address && (
               <div className="status-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.25rem' }}>
                 <span className="label">Billing Address</span>
-                <span className="value" style={{ fontWeight: 400, fontSize: '0.85rem' }}>
+                <span className="value" style={{ fontWeight: 400, fontSize: '0.85rem', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                   {quotation.customer_address}
                 </span>
               </div>
@@ -327,11 +327,11 @@ export const QuotationDetailPage: FC = () => {
 
       {/* Description / Scope */}
       {quotation.description && (
-        <Card style={{ marginBottom: '1.75rem' }}>
+        <Card style={{ marginBottom: '1.75rem', minWidth: 0 }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.65rem' }}>
             Project Overview &amp; Description
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
             {quotation.description}
           </p>
         </Card>
@@ -409,24 +409,24 @@ export const QuotationDetailPage: FC = () => {
 
       {/* Notes & Terms */}
       {(quotation.notes || quotation.terms_and_conditions) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '1.25rem', marginBottom: '2.5rem' }}>
           {quotation.notes && (
-            <Card>
+            <Card style={{ minWidth: 0 }}>
               <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 Client Notes
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {quotation.notes}
               </p>
             </Card>
           )}
 
           {quotation.terms_and_conditions && (
-            <Card>
+            <Card style={{ minWidth: 0 }}>
               <h2 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 Terms &amp; Conditions
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {quotation.terms_and_conditions}
               </p>
             </Card>

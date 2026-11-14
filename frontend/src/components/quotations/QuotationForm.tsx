@@ -640,7 +640,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       </Card>
 
       {/* Form Action Controls */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', alignItems: 'center' }}>
+      <div className="form-actions-bar">
         <Button
           type="button"
           variant="secondary"

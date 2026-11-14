@@ -191,7 +191,7 @@ export const SettingsPage: FC = () => {
       )}
 
       <form onSubmit={handleSubmit} noValidate>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.5rem', marginBottom: '1.75rem' }}>
           {/* Card 1: Company Profile & Identity */}
           <Card>
             <div className="card-header">
@@ -396,7 +396,7 @@ export const SettingsPage: FC = () => {
         </Card>
 
         {/* Form Actions */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+        <div className="form-actions-bar">
           <Link to="/dashboard">
             <Button variant="secondary" size="md">
               Cancel

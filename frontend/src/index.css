@@ -11,6 +11,10 @@ input, textarea, select, button {
   color: inherit;
 }
 
+p, h1, h2, h3, h4, h5, h6, span, div, a {
+  overflow-wrap: break-word;
+}
+
 :root {
   /* ── Obsidian Palette (Render-inspired Dark Minimal) ── */
   --bg-base:        #060709;

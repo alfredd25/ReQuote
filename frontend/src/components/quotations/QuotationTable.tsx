@@ -97,7 +97,7 @@ export const QuotationTable: FC<QuotationTableProps> = ({
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="toolbar-filter-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <label htmlFor="status-filter" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             Status:
           </label>
