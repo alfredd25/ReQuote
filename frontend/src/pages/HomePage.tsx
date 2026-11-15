@@ -107,16 +107,16 @@ export const HomePage: FC = () => {
               <div className="arch-breadcrumbs">
                 <span className="arch-crumb-muted">Acme Global</span>
                 <span className="arch-sep">›</span>
-                <span className="arch-crumb-active">Production Quotation</span>
+                <span className="arch-crumb-active">Project Estimation</span>
               </div>
               <div className="arch-status-pill">
                 <span className="pulse-dot green" />
-                <span>Live System</span>
+                <span>Verified Proposal</span>
               </div>
             </div>
 
             <div className="arch-body">
-              {/* Left Column: Flow Nodes */}
+              {/* Left Column: Quotation Workflow Modules */}
               <div className="arch-nodes-grid">
                 <div className="arch-node-card">
                   <div className="node-icon-title">
@@ -128,10 +128,10 @@ export const HomePage: FC = () => {
                     </span>
                     <div>
                       <div className="node-title">Client Scope</div>
-                      <div className="node-sub">Acme Enterprises</div>
+                      <div className="node-sub">Acme Enterprises LLC</div>
                     </div>
                   </div>
-                  <span className="node-badge live">Live</span>
+                  <span className="node-badge verified">Verified</span>
                 </div>
 
                 <div className="arch-node-card active-node">
@@ -142,11 +142,11 @@ export const HomePage: FC = () => {
                       </svg>
                     </span>
                     <div>
-                      <div className="node-title">Itemization API</div>
-                      <div className="node-sub">Decimal Precision</div>
+                      <div className="node-title">Scope &amp; Deliverables</div>
+                      <div className="node-sub">3 Milestones Itemized</div>
                     </div>
                   </div>
-                  <span className="node-badge deploying">Active</span>
+                  <span className="node-badge calculated">Calculated</span>
                 </div>
 
                 <div className="arch-node-card">
@@ -160,83 +160,82 @@ export const HomePage: FC = () => {
                       </svg>
                     </span>
                     <div>
-                      <div className="node-title">PDF Engine</div>
-                      <div className="node-sub">ReportLab Worker</div>
+                      <div className="node-title">Print-Ready PDF</div>
+                      <div className="node-sub">Branded Document Export</div>
                     </div>
                   </div>
-                  <span className="node-badge live">Live</span>
+                  <span className="node-badge ready">Ready</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
                     <span className="node-icon">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <ellipse cx="12" cy="5" rx="9" ry="3" />
-                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                       </svg>
                     </span>
                     <div>
                       <div className="node-title">Tax &amp; Currency</div>
-                      <div className="node-sub">PostgreSQL 16</div>
+                      <div className="node-sub">8.00% VAT · USD ($)</div>
                     </div>
                   </div>
-                  <span className="node-badge succeeded">Succeeded</span>
+                  <span className="node-badge applied">Applied</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
                     <span className="node-icon">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+                        <line x1="1" y1="10" x2="23" y2="10" />
                       </svg>
                     </span>
                     <div>
-                      <div className="node-title">Audit Trail</div>
-                      <div className="node-sub">JWT Ownership</div>
+                      <div className="node-title">Payment Terms</div>
+                      <div className="node-sub">Net 30 · 50% Deposit</div>
                     </div>
                   </div>
-                  <span className="node-badge live">Live</span>
+                  <span className="node-badge configured">Configured</span>
                 </div>
 
                 <div className="arch-node-card">
                   <div className="node-icon-title">
                     <span className="node-icon">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <polyline points="12 6 12 12 16 14" />
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
                       </svg>
                     </span>
                     <div>
-                      <div className="node-title">Lifecycle State</div>
-                      <div className="node-sub">Accepted Proposal</div>
+                      <div className="node-title">Proposal Status</div>
+                      <div className="node-sub">Accepted by Client</div>
                     </div>
                   </div>
-                  <span className="node-badge live">Live</span>
+                  <span className="node-badge accepted">Accepted</span>
                 </div>
               </div>
 
-              {/* Right Column: Live Terminal / Quotation Console */}
+              {/* Right Column: Quotation Summary & Breakdown Stream */}
               <div className="arch-terminal-pane">
                 <div className="terminal-header">
-                  <span className="terminal-file-name">RQ-2026-0819 · Quote Stream</span>
+                  <span className="terminal-file-name">RQ-2026-0819 · Digital Product Proposal</span>
                   <span className="terminal-badge">● Accepted</span>
                 </div>
                 <div className="terminal-body font-mono">
-                  <div className="term-line prompt">&gt; requote generate --id RQ-2026-0819</div>
-                  <div className="term-line success">[ok] Connected to PostgreSQL (Neon Pool) in 1.2ms</div>
-                  <div className="term-line info">[ok] Loaded client profile: Acme Global Digital Inc.</div>
+                  <div className="term-line prompt">Client:  Acme Global Digital Inc.</div>
+                  <div className="term-line info">Project: Web Platform Redesign &amp; Brand System</div>
                   <div className="term-line dim">--------------------------------------------------</div>
-                  <div className="term-line">[1] Cloud Migration Consulting: 40 hrs @ $175.00  = $7,000.00</div>
-                  <div className="term-line">[2] High-Availability DB Setup: 1 system @ $4,500 = $4,500.00</div>
-                  <div className="term-line">[3] CI/CD Pipeline Automation:  1 pipeline @ $3,000= $3,000.00</div>
+                  <div className="term-line">[1] Brand Identity &amp; UI System:   40 hrs @ $125.00 = $5,000.00</div>
+                  <div className="term-line">[2] Web Application Build:        80 hrs @ $125.00 = $10,000.00</div>
+                  <div className="term-line">[3] Cloud Deployment &amp; Setup:     1 setup @ $1,500 = $1,500.00</div>
                   <div className="term-line dim">--------------------------------------------------</div>
-                  <div className="term-line highlight">Subtotal:       $14,500.00 USD</div>
-                  <div className="term-line highlight">Tax (8.00%):     $1,160.00 USD</div>
-                  <div className="term-line grand-total">Grand Total:    $15,660.00 USD [Decimal-exact]</div>
-                  <div className="term-line success">[ok] PDF compiled: 2 pages, NumberedCanvas (14ms)</div>
-                  <div className="term-line accepted">[ok] Status Transition: [sent] → [accepted] verified</div>
+                  <div className="term-line highlight">Subtotal:       $16,500.00 USD</div>
+                  <div className="term-line highlight">Tax (8.00%):     $1,320.00 USD</div>
+                  <div className="term-line grand-total">Grand Total:    $17,820.00 USD [Exact calculation]</div>
+                  <div className="term-line dim">--------------------------------------------------</div>
+                  <div className="term-line success">[ok] Branded PDF compiled with payment terms &amp; logo</div>
+                  <div className="term-line accepted">[ok] Status: [accepted] · Client approved proposal</div>
                 </div>
               </div>
             </div>
@@ -272,9 +271,9 @@ export const HomePage: FC = () => {
 
           <div className="feature-card">
             <div className="feature-num">03</div>
-            <h3 className="feature-title">Enforced Lifecycle States</h3>
+            <h3 className="feature-title">Clear Status Tracking</h3>
             <p className="feature-desc">
-              Track quotations systematically through Draft, Sent, Accepted, Rejected, and Expired states with complete audit timestamps.
+              Track proposals systematically through Draft, Sent, Accepted, Rejected, and Expired states with transparent history.
             </p>
           </div>
         </div>

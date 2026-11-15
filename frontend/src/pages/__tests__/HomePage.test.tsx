@@ -33,10 +33,10 @@ describe('HomePage', () => {
       screen.getByRole('heading', { name: /your fastest path to production/i })
     ).toBeInTheDocument()
 
-    // Architecture section
+    // Interactive showcase section
     expect(screen.getByText('Client Scope')).toBeInTheDocument()
-    expect(screen.getByText('Itemization API')).toBeInTheDocument()
-    expect(screen.getByText('PDF Engine')).toBeInTheDocument()
+    expect(screen.getByText(/Scope & Deliverables/i)).toBeInTheDocument()
+    expect(screen.getByText('Print-Ready PDF')).toBeInTheDocument()
 
     // Guest CTAs
     const signInLinks = screen.getAllByRole('link', { name: /sign in/i })
